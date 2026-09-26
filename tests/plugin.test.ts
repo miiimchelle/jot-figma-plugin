@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { STORAGE_KEY, FILE_KEY_STORAGE } from "../logic";
+import { createCanvasMock } from "./canvasMock";
 
 // ---------------------------------------------------------------------------
 // Figma API Mock
 // ---------------------------------------------------------------------------
 function createFigmaMock() {
   const pluginData: Record<string, string> = {};
+  const clientData: Record<string, unknown> = {};
   const postMessage = vi.fn();
   const notify = vi.fn();
   const resize = vi.fn();
@@ -16,15 +18,12 @@ function createFigmaMock() {
     type: "FRAME",
     x: 0,
     removed: false,
+    getPluginData: (_k: string) => "",
     parent: { type: "PAGE", id: "page-1", name: "Page 1" } as any,
   };
 
-  const mockPage = {
-    type: "PAGE",
-    id: "page-1",
-    name: "Page 1",
-    selection: [mockNode] as any[],
-  };
+  const canvas = createCanvasMock();
+  const mockPage = Object.assign(canvas.page, { selection: [mockNode] as any[] });
   mockNode.parent = mockPage;
 
   const figma = {
@@ -42,9 +41,18 @@ function createFigmaMock() {
     },
     notify,
     showUI: vi.fn(),
+    clientStorage: {
+      getAsync: vi.fn(async (key: string) => clientData[key]),
+      setAsync: vi.fn(async (key: string, val: unknown) => {
+        clientData[key] = val;
+      }),
+    },
+    ...canvas.api,
+    editorType: "figma",
+    currentUser: { name: "Michelle Luo", photoUrl: "https://s3-alpha.figma.com/me.png" },
     getNodeByIdAsync: vi.fn(async (id: string) => {
       if (id === mockNode.id) return mockNode;
-      return null;
+      return canvas.nodes.get(id) ?? null;
     }),
     setCurrentPageAsync: vi.fn(async (page: any) => {
       figma.currentPage = page;
@@ -54,7 +62,7 @@ function createFigmaMock() {
     },
   };
 
-  return { figma, pluginData, postMessage, notify, resize, mockNode, mockPage };
+  return { figma, pluginData, postMessage, notify, resize, mockNode, mockPage, canvas };
 }
 
 // ---------------------------------------------------------------------------
@@ -222,6 +230,150 @@ describe("Plugin message handling", () => {
     });
   });
 
+  describe("ADD_ENTRY tag, heading and display", () => {
+    const lastEntries = (postMessage: any) =>
+      postMessage.mock.calls.find((c: any[]) => c[0].type === "JOURNAL")![0].entries;
+
+    it("allows no tag", async () => {
+      const { handler, postMessage } = await loadPlugin();
+      handler({ type: "ADD_ENTRY", entryType: "", note: "N" });
+      const [e] = lastEntries(postMessage);
+      expect(e.type).toBeUndefined();
+    });
+
+    it("stores heading and display", async () => {
+      const { handler, postMessage } = await loadPlugin();
+      handler({
+        type: "ADD_ENTRY",
+        heading: " Colour ",
+        note: "N",
+        display: { avatar: false, name: true, timestamp: false },
+      });
+      const [e] = lastEntries(postMessage);
+      expect(e).toMatchObject({
+        heading: "Colour",
+        display: { avatar: false, name: true, timestamp: false },
+      });
+    });
+  });
+
+  describe("Prefs", () => {
+    it("returns default display when nothing is stored", async () => {
+      const { handler, postMessage } = await loadPlugin();
+      postMessage.mockClear();
+      await handler({ type: "GET_PREFS" });
+      expect(postMessage).toHaveBeenCalledWith({
+        type: "PREFS",
+        display: { avatar: true, name: true, timestamp: true },
+      });
+    });
+
+    it("round-trips SET_PREFS", async () => {
+      const { handler, postMessage } = await loadPlugin();
+      await handler({ type: "SET_PREFS", display: { avatar: false, name: true, timestamp: false } });
+      postMessage.mockClear();
+      await handler({ type: "GET_PREFS" });
+      expect(postMessage).toHaveBeenCalledWith({
+        type: "PREFS",
+        display: { avatar: false, name: true, timestamp: false },
+      });
+    });
+  });
+
+  describe("Sticky canvas sync", () => {
+    const lastJournal = (postMessage: any) =>
+      postMessage.mock.calls.filter((c: any[]) => c[0].type === "JOURNAL").pop()![0].entries;
+
+    it("ADD_ENTRY stores author and the new sticky id", async () => {
+      const { handler, postMessage, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [e] = lastJournal(postMessage);
+      expect(e.author).toEqual({ name: "Michelle Luo", photoUrl: "https://s3-alpha.figma.com/me.png" });
+      expect(canvas.nodes.get(e.stickyNodeId)?.parent).toBe(canvas.page);
+    });
+
+    it("LINK_ENTRY links an unlinked entry to the selection and draws its sticky", async () => {
+      const { handler, postMessage, notify, pluginData, canvas } = await loadPlugin();
+      pluginData[STORAGE_KEY] = JSON.stringify([{ id: "e1", createdAt: "2025-01-01", note: "N" }]);
+      await handler({ type: "LINK_ENTRY", id: "e1" });
+      const [e] = lastJournal(postMessage);
+      expect(e).toMatchObject({ nodeId: "10:20", nodeName: "Test Frame", pageName: "Page 1" });
+      expect(canvas.nodes.get(e.stickyNodeId)?.parent).toBe(canvas.page);
+      expect(notify).toHaveBeenCalledWith("Linked to Test Frame");
+    });
+
+    it("LINK_ENTRY replaces the old sticky when relinking", async () => {
+      const { handler, postMessage, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [before] = lastJournal(postMessage);
+      await handler({ type: "LINK_ENTRY", id: before.id });
+      const [after] = lastJournal(postMessage);
+      expect(canvas.nodes.has(before.stickyNodeId)).toBe(false);
+      expect(after.stickyNodeId).not.toBe(before.stickyNodeId);
+    });
+
+    it("LINK_ENTRY needs a selection that is not a Jot sticky", async () => {
+      const { handler, postMessage, mockPage } = await loadPlugin();
+      mockPage.selection = [];
+      await handler({ type: "LINK_ENTRY", id: "e1" });
+      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Select a layer or frame first." });
+
+      mockPage.selection = [{ id: "1:1", name: "Jot sticky", getPluginData: () => "e1" }];
+      await handler({ type: "LINK_ENTRY", id: "e1" });
+      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Select a layer or frame, not a Jot sticky." });
+    });
+
+    it("UNLINK_ENTRY keeps the note but drops its link and sticky", async () => {
+      const { handler, postMessage, notify, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [before] = lastJournal(postMessage);
+      await handler({ type: "UNLINK_ENTRY", id: before.id });
+      const [after] = lastJournal(postMessage);
+      expect(canvas.nodes.has(before.stickyNodeId)).toBe(false);
+      expect(after).toMatchObject({ id: before.id, note: "N" });
+      for (const k of ["nodeId", "nodeName", "nodeUrl", "pageId", "pageName", "stickyNodeId"]) {
+        expect(after).not.toHaveProperty(k);
+      }
+      expect(notify).toHaveBeenCalledWith("Unlinked");
+    });
+
+    it("DELETE_ENTRY removes the sticky", async () => {
+      const { handler, postMessage, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [e] = lastJournal(postMessage);
+      await handler({ type: "DELETE_ENTRY", id: e.id });
+      expect(canvas.nodes.has(e.stickyNodeId)).toBe(false);
+    });
+
+    it("skips canvas in Dev Mode but still saves", async () => {
+      const { handler, postMessage, figma } = await loadPlugin();
+      (figma as any).editorType = "dev";
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      expect(lastJournal(postMessage)[0].stickyNodeId).toBeUndefined();
+      expect(figma.createFrame).not.toHaveBeenCalled();
+    });
+
+    it("reports a drawing failure without losing the entry", async () => {
+      const { handler, postMessage, figma } = await loadPlugin();
+      figma.createFrame.mockImplementation(() => { throw new Error("boom"); });
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      expect(lastJournal(postMessage)).toHaveLength(1);
+      expect(postMessage).toHaveBeenCalledWith({
+        type: "ERROR",
+        message: "Saved, but the sticky note could not be drawn.",
+      });
+    });
+
+    it("GO_TO_ENTRY selects the sticky for sticky entries", async () => {
+      const { handler, postMessage, figma, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [e] = lastJournal(postMessage);
+      await handler({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId });
+      expect(figma.currentPage.selection).toEqual([canvas.nodes.get(e.stickyNodeId)]);
+    });
+  });
+
   describe("UPDATE_ENTRY", () => {
     it("updates an existing entry", async () => {
       const { handler, postMessage, notify, figma } = await loadPlugin();
@@ -386,6 +538,7 @@ describe("Plugin message handling", () => {
       expect(figma.showUI).toHaveBeenCalledWith("<html></html>", {
         width: 360,
         height: 520,
+        themeColors: true,
       });
     });
 
@@ -399,7 +552,7 @@ describe("Plugin message handling", () => {
 
     it("notifies on load", async () => {
       const { notify } = await loadPlugin();
-      expect(notify).toHaveBeenCalledWith("Jot v2.0.0 ready");
+      expect(notify).toHaveBeenCalledWith("Jot v2.0.1 ready");
     });
   });
 });

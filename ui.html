@@ -51,24 +51,41 @@
       --font-size-base: 12px;
       --font-size-lead: 13px;
       --font-size-heading: 14px;
-      /* Semantic tokens */
-      --text-primary: var(--color-gray-900);
-      --text-secondary: var(--color-gray-600);
-      --text-muted: var(--color-gray-500);
-      --text-muted-subtle: #888;
-      --surface-default: var(--color-white);
-      --surface-elevated: var(--color-gray-100);
-      --surface-subtle: #f7f7f7;
-      --surface-subtle-alt: #f9f9fb;
-      --border-default: var(--color-gray-200);
-      --border-subtle: #eee;
-      --border-muted: #ddd;
-      --focus-ring: var(--color-gray-900);
+      /* Semantic tokens: Figma theme vars (themeColors: true), fallbacks for tests */
+      --text-primary: var(--figma-color-text, var(--color-gray-900));
+      --text-secondary: var(--figma-color-text-secondary, var(--color-gray-600));
+      --text-muted: var(--figma-color-text-tertiary, var(--color-gray-500));
+      --text-muted-subtle: var(--figma-color-text-tertiary, #888);
+      --text-on-brand: var(--figma-color-text-onbrand, var(--color-white));
+      --text-on-danger: var(--figma-color-text-ondanger, var(--color-white));
+      --text-success: var(--figma-color-text-success, var(--color-success));
+      --surface-default: var(--figma-color-bg, var(--color-white));
+      --surface-elevated: var(--figma-color-bg-secondary, var(--color-gray-100));
+      --surface-subtle: var(--figma-color-bg-hover, #f7f7f7);
+      --surface-subtle-alt: var(--figma-color-bg-secondary, #f9f9fb);
+      --surface-brand: var(--figma-color-bg-brand, var(--color-gray-900));
+      --surface-brand-hover: var(--figma-color-bg-brand-hover, var(--color-gray-800));
+      --surface-danger: var(--figma-color-bg-danger, #fa8072);
+      --surface-danger-hover: var(--figma-color-bg-danger-hover, #e96b5c);
+      --border-default: var(--figma-color-border, var(--color-gray-200));
+      --border-strong: var(--figma-color-border-strong, var(--color-gray-300));
+      --border-subtle: var(--figma-color-border, #eee);
+      --border-muted: var(--figma-color-border, #ddd);
+      --focus-ring: var(--figma-color-border-selected, var(--color-gray-900));
       --transition-default: 120ms ease;
     }
 
+    /* Figma dark theme: tone down pill primitives */
+    html.figma-dark {
+      --color-pill-decision-bg: #1e2a44; --color-pill-decision-fg: #93c5fd; --color-pill-decision-border: #1d4ed8;
+      --color-pill-assumption-bg: #3a2c12; --color-pill-assumption-fg: #fcd34d; --color-pill-assumption-border: #b45309;
+      --color-pill-tradeoff-bg: #2e2447; --color-pill-tradeoff-fg: #c4b5fd; --color-pill-tradeoff-border: #5b21b6;
+      --color-pill-feedback-bg: #12352a; --color-pill-feedback-fg: #6ee7b7; --color-pill-feedback-border: #047857;
+      --color-pill-debt-bg: #3f1d1d; --color-pill-debt-fg: #fca5a5; --color-pill-debt-border: #b91c1c;
+    }
+
     body {
-      font: var(--font-size-base)/1.4 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+      font: var(--font-size-base)/1.4 Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
       margin: var(--space-5);
       color: var(--text-primary);
       background: var(--surface-default);
@@ -91,12 +108,12 @@
     }
     .settings-btn:hover {
       background: var(--surface-elevated); color: var(--text-primary);
-      border-color: var(--color-gray-300);
+      border-color: var(--border-strong);
     }
     .settings-btn[data-state="active"] {
-      background: var(--color-gray-200); color: var(--text-primary);
-      border-color: var(--color-gray-600);
-      box-shadow: 0 0 0 1px var(--color-gray-600);
+      background: var(--figma-color-bg-selected, var(--color-gray-200)); color: var(--text-primary);
+      border-color: var(--focus-ring);
+      box-shadow: 0 0 0 1px var(--focus-ring);
     }
     .settings-btn:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
@@ -140,14 +157,15 @@
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
     }
     .btn-primary {
-      background: var(--color-gray-900); color: var(--color-white);
-      border-color: var(--color-gray-900);
+      background: var(--surface-brand); color: var(--text-on-brand);
+      border-color: var(--surface-brand);
       font-weight: 600;
     }
     .btn-primary:hover {
-      background: var(--color-gray-800); border-color: var(--color-gray-800);
+      background: var(--surface-brand-hover); border-color: var(--surface-brand-hover);
     }
     textarea {
+      font: inherit;
       width: 100%; height: 90px; resize: vertical; margin-top: var(--space-2);
       box-sizing: border-box; padding: var(--space-3);
       border: 1px solid var(--border-muted); border-radius: var(--radius-md);
@@ -168,7 +186,7 @@
       margin-bottom: var(--space-2);
     }
     .error {
-      color: var(--color-destructive); margin-top: var(--space-3);
+      color: var(--figma-color-text-danger, var(--color-destructive)); margin-top: var(--space-3);
       font-size: var(--font-size-caption);
     }
 
@@ -204,6 +222,10 @@
       border: 1px solid var(--border-muted); border-radius: var(--radius-full);
       font-size: var(--font-size-caption); margin-right: var(--space-2);
     }
+    .item-heading {
+      font-size: var(--font-size-lead); font-weight: 600; line-height: 1.3; margin-bottom: var(--space-1);
+    }
+    .item-heading + .item-note { font-size: var(--font-size-base); font-weight: 400; color: var(--text-secondary); }
     .pill--decision {
       background-color: var(--color-pill-decision-bg);
       color: var(--color-pill-decision-fg);
@@ -251,10 +273,10 @@
     }
     .action-btn:hover { background: var(--surface-subtle); }
     .action-btn--destructive {
-      background: #fa8072; color: var(--color-white);
-      border-color: #fa8072;
+      background: var(--surface-danger); color: var(--text-on-danger);
+      border-color: var(--surface-danger);
     }
-    .action-btn--destructive:hover { background: #e96b5c; border-color: #e96b5c; }
+    .action-btn--destructive:hover { background: var(--surface-danger-hover); border-color: var(--surface-danger-hover); }
     .action-btn:focus-visible,
     .action-btn--destructive:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
@@ -283,6 +305,19 @@
       background: var(--surface-subtle-alt); border: 1px solid var(--border-default);
       border-radius: var(--radius-md); padding: var(--space-4); margin-top: var(--space-4);
     }
+    .text-input {
+      width: 100%; height: 28px; box-sizing: border-box; margin-top: var(--space-2);
+      font-size: var(--font-size-base); padding: 0 var(--space-3);
+      border: 1px solid var(--border-muted); border-radius: var(--radius-sm);
+      background: var(--surface-default); color: var(--text-primary);
+    }
+    .text-input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .toggle-row { display: flex; gap: var(--space-4); margin: var(--space-3) 0 var(--space-2); flex-wrap: wrap; }
+    .toggle-row label {
+      display: flex; align-items: center; gap: var(--space-1);
+      font-size: var(--font-size-caption); color: var(--text-secondary); cursor: pointer;
+    }
+    .toggle-row input { margin: 0; accent-color: var(--surface-brand); }
     .setup-box input {
       width: 100%; height: 28px; box-sizing: border-box; margin-top: var(--space-2);
       font-size: var(--font-size-caption); padding: 0 var(--space-3);
@@ -296,7 +331,7 @@
     .setup-row { display: flex; gap: var(--space-3); margin-top: var(--space-2); }
     .setup-row button { flex: 1; height: 28px; font-size: var(--font-size-caption); margin-top: 0; }
     .setup-status {
-      font-size: var(--font-size-caption); color: var(--color-success);
+      font-size: var(--font-size-caption); color: var(--text-success);
       margin-top: var(--space-2); display: none;
     }
     .setup-hint { font-size: 10px; color: var(--text-muted); margin-top: var(--space-1); }
@@ -358,7 +393,7 @@
 
   <!-- WRITE -->
   <div id="panelWrite" class="panel active">
-    <div class="label" > <strong>Entry type</strong></div>
+    <div class="label" > <strong>Tag</strong></div>
     <div class="helper">What kind of thinking are you capturing?</div>
     <select id="type">
       <option value="decision">Decision</option>
@@ -366,11 +401,21 @@
       <option value="tradeoff">Trade-off</option>
       <option value="feedback">Feedback outcome</option>
       <option value="debt">Design debt</option>
+      <option value="">No tag</option>
     </select>
 
-    <div class="label"><strong>Decision note</strong></div>
-    <div class="helper">Capture the why, trade-offs, or context behind this decision.</div>
+    <div class="label"><strong>Heading</strong> (optional)</div>
+    <input id="heading" class="text-input" type="text" placeholder="e.g. Colour and typography" />
+
+    <div class="label"><strong>Note</strong></div>
+    <div class="helper">Capture the why, trade-offs, or context behind this.</div>
     <textarea id="note" placeholder="e.g. We chose X over Y because…"></textarea>
+
+    <div class="toggle-row" role="group" aria-label="Show author details">
+      <label><input id="showAvatar" type="checkbox" checked /> Avatar</label>
+      <label><input id="showName" type="checkbox" checked /> Name</label>
+      <label><input id="showTimestamp" type="checkbox" checked /> Timestamp</label>
+    </div>
 
     <button id="save" class="btn-primary">Save entry</button>
     <button id="cancelEdit" style="display:none;">Cancel edit</button>
@@ -380,13 +425,14 @@
   <div id="panelView" class="panel">
     <div class="filter-row">
       <span class="filter-label">Filter:</span>
-      <select id="filterType">
-        <option value="all">All types</option>
+      <select id="filterType" aria-label="Filter by tag">
+        <option value="all">All tags</option>
         <option value="decision">Decision</option>
         <option value="assumption">Assumption</option>
         <option value="tradeoff">Trade-off</option>
         <option value="feedback">Feedback outcome</option>
         <option value="debt">Design debt</option>
+        <option value="none">No tag</option>
       </select>
     </div>
     <div id="entryCount" class="entry-count"></div>
@@ -547,16 +593,53 @@
     // --- Filter ---
     $("filterType").onchange = () => render(currentEntries);
 
+    // Kept in sync with logic.ts filterEntries().
     function getFilteredEntries(entries) {
-      const f = $("filterType").value;
-      return f === "all" ? entries : entries.filter((e) => e.type === f);
+      const t = $("filterType").value;
+      return entries.filter((e) => t === "all" || (t === "none" ? !e.type : e.type === t));
+    }
+
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+    function countLabel(all, filtered) {
+      if ($("filterType").value !== "all") return `${filtered.length} of ${plural(all.length, "entry", "entries")}`;
+      return plural(all.length, "entry", "entries");
     }
 
     // --- Edit mode ---
+    // Kept in sync with logic.ts TAG_LABELS.
+    const TAG_LABEL = {
+      decision: "Decision", assumption: "Assumption", tradeoff: "Trade-off", feedback: "Feedback", debt: "Design debt",
+    };
+
+    // --- Author display ---
+    const DISPLAY_IDS = { avatar: "showAvatar", name: "showName", timestamp: "showTimestamp" };
+
+    function getDisplay() {
+      const d = {};
+      for (const [k, id] of Object.entries(DISPLAY_IDS)) d[k] = $(id).checked;
+      return d;
+    }
+    function setDisplay(display) {
+      for (const [k, id] of Object.entries(DISPLAY_IDS)) {
+        if (typeof display?.[k] === "boolean") $(id).checked = display[k];
+      }
+    }
+    for (const id of Object.values(DISPLAY_IDS)) {
+      $(id).onchange = () => { if (!editingId) send({ type: "SET_PREFS", display: getDisplay() }); };
+    }
+
+    function resetForm() {
+      $("heading").value = "";
+      $("note").value = "";
+    }
+
     function enterEditMode(entry) {
       editingId = entry.id;
-      $("type").value = entry.type;
+      $("type").value = entry.type || "";
+      $("heading").value = entry.heading || "";
       $("note").value = entry.note;
+      if (entry.display) setDisplay(entry.display);
       $("save").textContent = "Update entry";
       $("cancelEdit").style.display = "block";
       $("note").focus();
@@ -579,9 +662,7 @@
       $("tabCount").textContent = currentEntries.length ? `(${currentEntries.length})` : "";
 
       if (currentEntries.length) {
-        $("entryCount").textContent = $("filterType").value === "all"
-          ? `${currentEntries.length} ${currentEntries.length === 1 ? "entry" : "entries"}`
-          : `${filtered.length} of ${currentEntries.length} entries`;
+        $("entryCount").textContent = countLabel(currentEntries, filtered);
       } else {
         $("entryCount").textContent = "";
       }
@@ -602,11 +683,12 @@
 
       for (const e of filtered) {
         const item = document.createElement("div");
+        const tag = TAG_LABEL[e.type] ? e.type : "";
         item.className = "item" + (e.nodeId ? " clickable" : "");
         if (e.nodeId) {
           item.setAttribute("tabindex", "0");
-          item.onclick = () => send({ type: "GO_TO_ENTRY", nodeId: e.nodeId });
-          item.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); send({ type: "GO_TO_ENTRY", nodeId: e.nodeId }); } };
+          item.onclick = () => send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId });
+          item.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId }); } };
         }
 
         const linked = e.pageName && e.nodeName
@@ -614,8 +696,9 @@
           : e.pageName || "(not linked)";
 
         item.innerHTML = `
-          <div class="meta"><span class="pill pill--${escapeHtml(e.type)}">${escapeHtml(e.type)}</span> ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
+          <div class="meta">${tag ? `<span class="pill pill--${tag}">${TAG_LABEL[tag]}</span>` : ""} ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
           <div class="linked">Linked to: ${escapeHtml(linked)}</div>
+          ${e.heading ? `<div class="item-heading">${escapeHtml(e.heading)}</div>` : ""}
           <div class="item-note">${escapeHtml(e.note)}</div>
           <div class="actions"></div>`;
 
@@ -625,6 +708,20 @@
         editBtn.className = "action-btn";
         editBtn.textContent = "Edit";
         editBtn.onclick = (ev) => { ev.stopPropagation(); setError(""); enterEditMode(e); };
+
+        const linkBtn = document.createElement("button");
+        linkBtn.className = "action-btn";
+        linkBtn.textContent = e.nodeId ? "Change link" : "Link to selection";
+        linkBtn.title = e.nodeId
+          ? "Move this note to the layer or frame selected in Figma"
+          : "Link this note to the layer or frame selected in Figma";
+        linkBtn.onclick = (ev) => { ev.stopPropagation(); setError(""); send({ type: "LINK_ENTRY", id: e.id }); };
+
+        const unlinkBtn = document.createElement("button");
+        unlinkBtn.className = "action-btn";
+        unlinkBtn.textContent = "Unlink";
+        unlinkBtn.title = "Remove the link and its sticky. The note stays in Jot.";
+        unlinkBtn.onclick = (ev) => { ev.stopPropagation(); setError(""); send({ type: "UNLINK_ENTRY", id: e.id }); };
 
         const delBtn = document.createElement("button");
         delBtn.className = "action-btn action-btn--destructive";
@@ -636,6 +733,8 @@
         };
 
         actions.appendChild(editBtn);
+        actions.appendChild(linkBtn);
+        if (e.nodeId) actions.appendChild(unlinkBtn);
         actions.appendChild(delBtn);
         list.appendChild(item);
       }
@@ -644,11 +743,16 @@
     }
 
     // --- Actions ---
-    $("cancelEdit").onclick = () => { exitEditMode(); $("note").value = ""; setError(""); };
+    $("cancelEdit").onclick = () => { exitEditMode(); resetForm(); setError(""); send({ type: "GET_PREFS" }); };
 
     $("save").onclick = () => {
       setError("");
-      const payload = { entryType: $("type").value, note: $("note").value };
+      const payload = {
+        entryType: $("type").value,
+        heading: $("heading").value,
+        note: $("note").value,
+        display: getDisplay(),
+      };
       send(editingId ? { type: "UPDATE_ENTRY", id: editingId, ...payload } : { type: "ADD_ENTRY", ...payload });
     };
 
@@ -686,10 +790,15 @@
 
       if (msg.type === "JOURNAL") {
         exitEditMode();
-        $("note").value = "";
+        resetForm();
         $("md").style.display = "none";
         $("copyMd").style.display = "none";
         render(msg.entries);
+        return;
+      }
+
+      if (msg.type === "PREFS") {
+        if (!editingId) setDisplay(msg.display);
         return;
       }
 
@@ -706,6 +815,7 @@
       requestResize();
       send({ type: "GET_JOURNAL" });
       send({ type: "GET_FILE_KEY" });
+      send({ type: "GET_PREFS" });
     };
   </script>
 </body>

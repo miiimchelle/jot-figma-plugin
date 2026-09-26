@@ -6,13 +6,35 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
-- —
+- Optional heading and author display options (avatar, name, timestamp) per entry
+- Tags are now optional ("No tag" option)
+- Add entry: heading field, avatar/name/timestamp toggles remembered per user
+- View entries: "No tag" filter, heading shown on cards
+- Colour coding by tag on canvas stickies (Decision blue, Assumption amber, Trade-off purple, Feedback green, Design debt red), with an all-caps tag pill above the heading. Untagged stays yellow. No icon
+- View entries: unlinked notes get "Link to selection"; linked notes get "Change link" (moves the note and its sticky to the selected layer) and "Unlink" (removes the link and sticky, keeps the note)
+- Several notes on one layer: their stickies stack in a column to the right of the layer, 16px apart, re-stacked on add, edit, link, unlink and delete. Stickies moved out of the column are left alone
+- Pills show readable labels ("Trade-off", "Design debt")
+- Sticky notes on canvas: every entry with a linked layer gets one, drawn 24px right of the layer, rebuilt on edit (keeping a moved position), removed on delete. Avatar falls back to initials
 
 ### Changed
-- —
+- Manifest: `currentuser` permission, network access limited to `*.figma.com` (avatar only)
+- UI follows Figma's light and dark theme (`themeColors`), Inter font
+- Add entry: "Entry type" renamed to "Tag", "Decision note" renamed to "Note"
 
 ### Fixed
 - —
+
+---
+
+## [v2.0.1] - 2026-09-26
+### Fixed
+- Jump to linked layer failed with `documentAccess: dynamic-page`; now uses `getNodeByIdAsync` and `setCurrentPageAsync`
+- Notes and layer names are escaped before rendering, so HTML in a note can no longer run in the plugin UI
+- Unknown entry types are rejected
+- Plugin window now shrinks to fit content, until you drag the resize handle
+
+### Changed
+- Removed stray files (`.DS_Store`, `test-results/`, `pippin-code.js`)
 
 ---
 

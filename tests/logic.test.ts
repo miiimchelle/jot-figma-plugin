@@ -9,6 +9,17 @@ import {
   cleanNote,
   generateEntryId,
   isEntryType,
+  parseTag,
+  parseAuthorDisplay,
+  cleanHeading,
+  formatStickyDate,
+  initials,
+  stickyContent,
+  stackYs,
+  hexToRgb,
+  TAG_PALETTES,
+  UNTAGGED_PALETTE,
+  stickyPosition,
   STORAGE_KEY,
   FILE_KEY_STORAGE,
   JournalEntry,
@@ -102,6 +113,31 @@ describe("parseJournal", () => {
   it("returns empty array for null-ish input", () => {
     expect(parseJournal("")).toEqual([]);
   });
+
+  it("returns empty array for non-array JSON", () => {
+    expect(parseJournal("{}")).toEqual([]);
+  });
+});
+
+describe("parseTag", () => {
+  it("treats empty tag as none and rejects unknown tags", () => {
+    expect(parseTag("")).toBeUndefined();
+    expect(parseTag(undefined)).toBeUndefined();
+    expect(parseTag("debt")).toBe("debt");
+    expect(parseTag("bogus")).toBeNull();
+  });
+});
+
+describe("parseAuthorDisplay / cleanHeading", () => {
+  it("defaults all toggles on and keeps booleans", () => {
+    expect(parseAuthorDisplay(undefined)).toEqual({ avatar: true, name: true, timestamp: true });
+    expect(parseAuthorDisplay({ avatar: false, name: "x" })).toEqual({ avatar: false, name: true, timestamp: true });
+  });
+
+  it("trims heading and drops empty", () => {
+    expect(cleanHeading("  Colour  ")).toBe("Colour");
+    expect(cleanHeading("   ")).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -162,6 +198,11 @@ describe("filterEntries", () => {
 
   it("returns all entries when filter is 'all'", () => {
     expect(filterEntries(entries, "all")).toEqual(entries);
+  });
+
+  it("filters untagged entries with 'none'", () => {
+    const untagged = { id: "5", createdAt: "x", note: "n" } as JournalEntry;
+    expect(filterEntries([...entries, untagged], "none").map((e) => e.id)).toEqual(["5"]);
   });
 
   it("filters by decision", () => {
@@ -392,5 +433,44 @@ describe("constants", () => {
 
   it("has correct file key storage key", () => {
     expect(FILE_KEY_STORAGE).toBe("jot.filekey.v1");
+  });
+});
+
+describe("sticky layout", () => {
+  const base = { id: "1", createdAt: "2025-09-29T10:00:00Z", note: "N", author: { name: "Luis" } } as JournalEntry;
+
+  it("formats dates as '29 September 2025'", () => {
+    expect(formatStickyDate("2025-09-29T10:00:00Z")).toBe("29 September 2025");
+    expect(formatStickyDate("bad")).toBe("");
+  });
+
+  it("builds initials", () => {
+    expect(initials("michelle luo")).toBe("ML");
+    expect(initials("")).toBe("?");
+  });
+
+  it("drops the footer when every toggle is off", () => {
+    expect(stickyContent({ ...base, display: { avatar: false, name: false, timestamp: false } }).footer).toBeNull();
+    expect(stickyContent(base).footer).toEqual({ avatar: true, name: "Luis", date: "29 September 2025" });
+  });
+
+  it("picks pill label and palette from the tag, falling back for unknown tags", () => {
+    expect(stickyContent({ ...base, type: "debt" })).toMatchObject({ pill: "Design debt", palette: TAG_PALETTES.debt });
+    const unknown = stickyContent({ ...base, type: "bogus" as any });
+    expect(unknown.pill).toBeUndefined();
+    expect(unknown.palette).toBe(UNTAGGED_PALETTE);
+  });
+
+  it("converts hex to Figma RGB", () => {
+    expect(hexToRgb("#FF8000")).toEqual({ r: 1, g: 128 / 255, b: 0 });
+  });
+
+  it("stacks y positions 16px apart", () => {
+    expect(stackYs(50, [100, 40, 10])).toEqual([50, 166, 222]);
+    expect(stackYs(0, [])).toEqual([]);
+  });
+
+  it("places the sticky 24px right of the layer", () => {
+    expect(stickyPosition({ x: 10, y: 20, width: 100, height: 50 })).toEqual({ x: 134, y: 20 });
   });
 });

@@ -164,9 +164,10 @@ describe("UI", () => {
   // Write entry form
   // -----------------------------------------------------------------------
   describe("Write entry form", () => {
-    it("has entry type dropdown with 5 options", () => {
+    it("has tag dropdown with 5 tags plus 'No tag'", () => {
       const select = doc.getElementById("type") as HTMLSelectElement;
-      expect(select.options).toHaveLength(5);
+      expect(select.options).toHaveLength(6);
+      expect(select.options[5].value).toBe("");
     });
 
     it("defaults to 'decision' type", () => {
@@ -203,6 +204,61 @@ describe("UI", () => {
     });
   });
 
+  describe("Heading and author toggles", () => {
+    const save = () => {
+      (doc.getElementById("note") as HTMLTextAreaElement).value = "N";
+      messages.length = 0;
+      (doc.getElementById("save") as HTMLElement).click();
+      return messages.find((m) => m.type === "ADD_ENTRY");
+    };
+    it("defaults to all toggles on", () => {
+      expect(save()).toMatchObject({
+        heading: "",
+        display: { avatar: true, name: true, timestamp: true },
+      });
+    });
+
+    it("sends heading and no kind", () => {
+      (doc.getElementById("heading") as HTMLInputElement).value = "Colour";
+      const msg = save();
+      expect(msg).toMatchObject({ heading: "Colour" });
+      expect(msg).not.toHaveProperty("kind");
+    });
+
+    it("sends SET_PREFS when a toggle changes", () => {
+      const avatar = doc.getElementById("showAvatar") as HTMLInputElement;
+      messages.length = 0;
+      avatar.checked = false;
+      avatar.dispatchEvent(new win.Event("change"));
+      expect(messages).toContainEqual({
+        type: "SET_PREFS",
+        display: { avatar: false, name: true, timestamp: true },
+      });
+    });
+
+    it("applies PREFS from the plugin", () => {
+      simulatePluginMessage(win, { type: "PREFS", display: { avatar: true, name: false, timestamp: false } });
+      expect(save().display).toEqual({ avatar: true, name: false, timestamp: false });
+    });
+
+    it("requests PREFS on load", () => {
+      expect(messages.some((m) => m.type === "GET_PREFS")).toBe(true);
+    });
+
+    it("fills heading and toggles in edit mode", () => {
+      simulatePluginMessage(win, {
+        type: "JOURNAL",
+        entries: [{
+          id: "e1", createdAt: "2025-01-01", heading: "H", note: "N",
+          display: { avatar: false, name: false, timestamp: true },
+        }],
+      });
+      (doc.querySelector(".action-btn") as HTMLElement).click();
+      expect((doc.getElementById("heading") as HTMLInputElement).value).toBe("H");
+      expect((doc.getElementById("showName") as HTMLInputElement).checked).toBe(false);
+    });
+  });
+
   // -----------------------------------------------------------------------
   // Journal rendering
   // -----------------------------------------------------------------------
@@ -232,7 +288,7 @@ describe("UI", () => {
       const items = doc.querySelectorAll(".item");
       expect(items).toHaveLength(1);
       expect(items[0].textContent).toContain("My note");
-      expect(items[0].textContent).toContain("decision");
+      expect(items[0].textContent).toContain("Decision");
     });
 
     it("shows entry count", () => {
@@ -426,7 +482,7 @@ describe("UI", () => {
       });
 
       const buttons = doc.querySelectorAll(".action-btn");
-      const deleteBtn = buttons[1] as HTMLElement;
+      const deleteBtn = doc.querySelector(".action-btn--destructive") as HTMLElement;
       messages.length = 0;
       deleteBtn.click();
 
@@ -446,7 +502,7 @@ describe("UI", () => {
       });
 
       const buttons = doc.querySelectorAll(".action-btn");
-      const deleteBtn = buttons[1] as HTMLElement;
+      const deleteBtn = doc.querySelector(".action-btn--destructive") as HTMLElement;
       messages.length = 0;
       deleteBtn.click();
 
@@ -735,6 +791,71 @@ describe("UI", () => {
     it("sends GET_FILE_KEY on load", () => {
       const keyMsg = messages.find((m) => m?.type === "GET_FILE_KEY");
       expect(keyMsg).toBeDefined();
+    });
+  });
+
+  describe("View entries", () => {
+    const journal = () =>
+      simulatePluginMessage(win, {
+        type: "JOURNAL",
+        entries: [
+          { id: "s1", createdAt: "2025-01-01", type: "debt", note: "A" },
+          { id: "a1", createdAt: "2025-01-02", kind: "annotation", heading: "Head", note: "B" },
+        ],
+      });
+
+    it("has no kind filter or badge", () => {
+      journal();
+      expect(doc.getElementById("filterKind")).toBeNull();
+      expect(doc.querySelector(".kind-badge")).toBeNull();
+    });
+
+    it("shows link buttons by link state and sends their messages", () => {
+      simulatePluginMessage(win, {
+        type: "JOURNAL",
+        entries: [
+          { id: "u1", createdAt: "2025-01-01", note: "A" },
+          { id: "l1", createdAt: "2025-01-02", note: "B", nodeId: "1:2", nodeName: "Frame", pageName: "P" },
+        ],
+      });
+      const labels = (i: number) =>
+        [...doc.querySelectorAll(".item")[i].querySelectorAll(".action-btn")].map((b) => b.textContent);
+      expect(labels(0)).toEqual(["Edit", "Link to selection", "Delete"]);
+      expect(labels(1)).toEqual(["Edit", "Change link", "Unlink", "Delete"]);
+
+      messages.length = 0;
+      const click = (text: string) =>
+        ([...doc.querySelectorAll(".action-btn")].find((b) => b.textContent === text) as HTMLElement).click();
+      click("Link to selection");
+      click("Change link");
+      click("Unlink");
+      expect(messages).toEqual([
+        { type: "LINK_ENTRY", id: "u1" },
+        { type: "LINK_ENTRY", id: "l1" },
+        { type: "UNLINK_ENTRY", id: "l1" },
+      ]);
+    });
+
+    it("renders heading and hides empty tag pill", () => {
+      journal();
+      const items = doc.querySelectorAll(".item");
+      expect(items[1].querySelector(".item-heading")?.textContent).toBe("Head");
+      expect(items[1].querySelector(".pill")).toBeNull();
+      expect(items[0].querySelector(".pill")?.textContent).toBe("Design debt");
+    });
+
+    it("does not colour code cards", () => {
+      journal();
+      expect([...doc.querySelectorAll(".item")].map((i) => i.className)).toEqual(["item", "item"]);
+    });
+
+    it("filters by 'No tag'", () => {
+      journal();
+      const sel = doc.getElementById("filterType") as HTMLSelectElement;
+      sel.value = "none";
+      sel.dispatchEvent(new win.Event("change"));
+      expect([...doc.querySelectorAll(".item-note")].map((n) => n.textContent)).toEqual(["B"]);
+      expect(doc.getElementById("entryCount")?.textContent).toBe("1 of 2 entries");
     });
   });
 });
