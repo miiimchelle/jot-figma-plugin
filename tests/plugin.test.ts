@@ -565,7 +565,7 @@ describe("Plugin message handling", () => {
 
     it("notifies on load", async () => {
       const { notify } = await loadPlugin();
-      expect(notify).toHaveBeenCalledWith("Jot v2.0.0 ready");
+      expect(notify).toHaveBeenCalledWith("Jot v2.0.1 ready");
     });
   });
 });

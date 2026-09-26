@@ -24,6 +24,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v2.0.1] - 2026-09-26
+### Fixed
+- Jump to linked layer failed with `documentAccess: dynamic-page`; now uses `getNodeByIdAsync` and `setCurrentPageAsync`
+- Notes and layer names are escaped before rendering, so HTML in a note can no longer run in the plugin UI
+- Unknown entry types are rejected
+- Plugin window now shrinks to fit content, until you drag the resize handle
+
+### Changed
+- Removed stray files (`.DS_Store`, `test-results/`, `pippin-code.js`)
+
+---
+
 ## [v2.0.0] - 2026-02-24
 ### Added
 - Renamed plugin from Baseline to **Jot**
