@@ -91,6 +91,38 @@ describe("sticky colours and pill", () => {
   });
 });
 
+describe("note formatting on the sticky", () => {
+  const noteNode = (sticky: any): any => {
+    const find = (n: any): any => (n.type === "TEXT" && n.characters.startsWith("We") ? n : n.children.map(find).find(Boolean));
+    return find(sticky);
+  };
+
+  it("renders bold, italic, links and lists as Figma text ranges", async () => {
+    const md = "We chose **X** over *Y*, see [docs](https://x.io)\n\n- one\n  - two\n\n1. first";
+    const sticky = mock.nodes.get((await syncSticky(entry({ heading: undefined, note: md })))!)!;
+    const t = noteNode(sticky);
+    expect(t.characters).toBe("We chose X over Y, see docs\none\ntwo\nfirst");
+    expect(t.ranges).toEqual([
+      ["font", 9, 10, { family: "Roboto Mono", style: "Bold" }],
+      ["font", 16, 17, { family: "Roboto Mono", style: "Italic" }],
+      ["link", 23, 27, { type: "URL", value: "https://x.io" }],
+      ["decoration", 23, 27, "UNDERLINE"],
+      ["list", 28, 31, { type: "UNORDERED" }],
+      ["list", 32, 35, { type: "UNORDERED" }],
+      ["indent", 32, 35, 1],
+      ["list", 36, 41, { type: "ORDERED" }],
+    ]);
+  });
+
+  it("falls back to upright when the italic font is missing", async () => {
+    mock.api.loadFontAsync.mockImplementation(async (f: any) => {
+      if (f.style.includes("Italic")) throw new Error("missing");
+    });
+    const t = noteNode(mock.nodes.get((await syncSticky(entry({ heading: undefined, note: "We *so*" })))!)!);
+    expect(t.ranges).toEqual([["font", 3, 5, { family: "Roboto Mono", style: "Regular" }]]);
+  });
+});
+
 describe("stacking stickies on one layer", () => {
   const add = async (id: string) => mock.nodes.get((await syncSticky(entry({ id })))!)!;
 

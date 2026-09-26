@@ -457,6 +457,17 @@ describe("Plugin message handling", () => {
     });
   });
 
+  describe("OPEN_URL", () => {
+    it("opens http(s) and mailto links only", async () => {
+      const { handler, figma } = await loadPlugin();
+      (figma as any).openExternal = vi.fn();
+      handler({ type: "OPEN_URL", url: "https://x.io" });
+      handler({ type: "OPEN_URL", url: "javascript:alert(1)" });
+      handler({ type: "OPEN_URL", url: 42 });
+      expect((figma as any).openExternal.mock.calls).toEqual([["https://x.io"]]);
+    });
+  });
+
   describe("Window size", () => {
     it("ignores RESIZE (fixed window)", async () => {
       const { handler, resize } = await loadPlugin();

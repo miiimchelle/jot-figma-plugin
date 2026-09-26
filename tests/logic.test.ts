@@ -15,6 +15,10 @@ import {
   formatStickyDate,
   initials,
   stickyContent,
+  parseInline,
+  parseNote,
+  listNumbers,
+  flattenNote,
   stackYs,
   hexToRgb,
   TAG_PALETTES,
@@ -472,5 +476,59 @@ describe("sticky layout", () => {
 
   it("places the sticky 24px right of the layer", () => {
     expect(stickyPosition({ x: 10, y: 20, width: 100, height: 50 })).toEqual({ x: 134, y: 20 });
+  });
+});
+
+describe("note Markdown", () => {
+  it("parses bold, italic, links and escapes", () => {
+    expect(parseInline("a **b** *c* [d](https://x.io) \\*e\\_")).toEqual([
+      { text: "a " },
+      { text: "b", bold: true },
+      { text: " " },
+      { text: "c", italic: true },
+      { text: " " },
+      { text: "d", href: "https://x.io" },
+      { text: " *e_" },
+    ]);
+    expect(parseInline("***both***")).toEqual([{ text: "both", bold: true, italic: true }]);
+  });
+
+  it("keeps unclosed markers and unsafe links as text", () => {
+    expect(parseInline("2 * 3 and [x](javascript:alert(1))")).toEqual([{ text: "2 * 3 and x)" }]);
+  });
+
+  it("splits paragraphs and nested lists", () => {
+    const blocks = parseNote("Intro\nline two\n\n- one\n  - nested\n- two\n\n1. first\n2. second");
+    expect(blocks.map((b) => [b.kind, b.depth, b.spans.map((s) => s.text).join("")])).toEqual([
+      ["paragraph", 0, "Intro\nline two"],
+      ["bullet", 0, "one"],
+      ["bullet", 1, "nested"],
+      ["bullet", 0, "two"],
+      ["ordered", 0, "first"],
+      ["ordered", 0, "second"],
+    ]);
+  });
+
+  it("treats plain notes as one paragraph", () => {
+    expect(parseNote("We chose X.")).toEqual([{ kind: "paragraph", depth: 0, spans: [{ text: "We chose X." }] }]);
+  });
+
+  it("numbers ordered items per list and level", () => {
+    expect(listNumbers(parseNote("1. a\n2. b\n   1. c\n3. d\n\npara\n\n1. e"))).toEqual([1, 2, 1, 3, 0, 1]);
+  });
+
+  it("flattens to text with style runs and list lines", () => {
+    expect(flattenNote("Hi **you**\nthere\n\n- [a](https://x.io)\n  - b")).toEqual({
+      text: "Hi you\u2028there\na\nb",
+      runs: [
+        { start: 3, end: 6, bold: true },
+        { start: 13, end: 14, href: "https://x.io" },
+      ],
+      lines: [
+        { start: 0, end: 12, kind: "paragraph", depth: 0 },
+        { start: 13, end: 14, kind: "bullet", depth: 0 },
+        { start: 15, end: 16, kind: "bullet", depth: 1 },
+      ],
+    });
   });
 });

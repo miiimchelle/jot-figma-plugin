@@ -6,11 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
-- —
+- Rich text notes: bold, italic, bullet and numbered lists, and links, from a toolbar in the Note editor (Tiptap). Notes are stored as Markdown, so older plain notes and the Markdown export keep working
+- Formatting shows on Entries rows and on canvas stickies (Figma bold/italic styles, native lists, hyperlinks). Links in Entries open via the plugin
 
 ### Changed
 - Plugin UI rebuilt with Figma-native components (`@create-figma-plugin/ui`, Preact): Figma tabs (Write, Entries, Settings), dropdowns, text fields, checkboxes and buttons, flat entry rows with dividers, warning banner for errors. Follows Figma light and dark themes
 - Fixed 360 × 720 window: auto-resize and the drag handle are gone. On Entries the filter row (with "Export markdown") stays put and only the list scrolls
+- Write tab: the Note editor fills the window and Save (with Cancel edit) is pinned to the bottom
 - Settings moved from the gear button to a Settings tab; the entry count moved from the tab label into the Entries panel
 - UI source now lives in `ui/` and builds to `dist/ui.html`; UI tests are component tests (`@testing-library/preact`)
 

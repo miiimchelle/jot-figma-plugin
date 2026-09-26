@@ -279,6 +279,11 @@ async function handleGoToEntry(msg: { id?: string; nodeId?: string }) {
   }
 }
 
+// Links in notes; plugin UIs can't navigate themselves.
+function handleOpenUrl(msg: { url: unknown }) {
+  if (typeof msg.url === "string" && /^(https?:|mailto:)/i.test(msg.url)) figma.openExternal(msg.url);
+}
+
 function handleExportMd() {
   post({ type: "EXPORT_MD_RESULT", markdown: toMarkdown(getJournal(), fileKey()) });
 }
@@ -300,6 +305,7 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   UNLINK_ENTRY: handleUnlinkEntry,
   GO_TO_ENTRY: handleGoToEntry,
   EXPORT_MD: handleExportMd,
+  OPEN_URL: handleOpenUrl,
 };
 
 // ---------------------------------------------------------------------------

@@ -51,6 +51,13 @@ export function createCanvasMock() {
       getPluginData(k: string) {
         return data[k] ?? "";
       },
+      // Text range styling: recorded as [method, start, end, value].
+      ranges: [] as unknown[][],
+      setRangeFontName: (s: number, e: number, v: unknown) => n.ranges.push(["font", s, e, v]),
+      setRangeHyperlink: (s: number, e: number, v: unknown) => n.ranges.push(["link", s, e, v]),
+      setRangeTextDecoration: (s: number, e: number, v: unknown) => n.ranges.push(["decoration", s, e, v]),
+      setRangeListOptions: (s: number, e: number, v: unknown) => n.ranges.push(["list", s, e, v]),
+      setRangeIndentation: (s: number, e: number, v: unknown) => n.ranges.push(["indent", s, e, v]),
     };
     nodes.set(n.id, n);
     return n;

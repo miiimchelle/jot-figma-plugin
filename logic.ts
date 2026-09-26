@@ -238,3 +238,169 @@ export function stackYs(top: number, heights: number[]): number[] {
   }
   return ys;
 }
+
+// ---------------------------------------------------------------------------
+// Note formatting. Notes are Markdown from the editor: **bold**, *italic*,
+// [links](https://…), "- " and "1. " lists (nested by indentation).
+// ---------------------------------------------------------------------------
+
+export type NoteSpan = { text: string; bold?: boolean; italic?: boolean; href?: string };
+export type NoteBlock = { kind: "paragraph" | "bullet" | "ordered"; depth: number; spans: NoteSpan[] };
+
+const SAFE_HREF = /^(https?:|mailto:)/i;
+
+function sameStyle(a: NoteSpan, b: NoteSpan) {
+  return !!a.bold === !!b.bold && !!a.italic === !!b.italic && a.href === b.href;
+}
+
+function pushSpan(spans: NoteSpan[], span: NoteSpan) {
+  if (!span.text) return;
+  const prev = spans[spans.length - 1];
+  if (prev && sameStyle(prev, span)) prev.text += span.text;
+  else spans.push(span);
+}
+
+/** Inline Markdown to styled spans. Unclosed markers stay as literal text. */
+export function parseInline(src: string, style: Omit<NoteSpan, "text"> = {}): NoteSpan[] {
+  const spans: NoteSpan[] = [];
+  let text = "";
+  const flush = () => {
+    pushSpan(spans, { ...style, text });
+    text = "";
+  };
+  const nest = (inner: string, extra: Omit<NoteSpan, "text">) => {
+    flush();
+    for (const s of parseInline(inner, { ...style, ...extra })) pushSpan(spans, s);
+  };
+
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === "\\" && i + 1 < src.length) {
+      text += src[i + 1];
+      i += 2;
+      continue;
+    }
+    if (c === "[") {
+      const close = src.indexOf("](", i);
+      const end = close === -1 ? -1 : src.indexOf(")", close + 2);
+      if (end !== -1) {
+        const href = src.slice(close + 2, end).trim();
+        nest(src.slice(i + 1, close), SAFE_HREF.test(href) ? { href } : {});
+        i = end + 1;
+        continue;
+      }
+    }
+    if ((c === "*" || c === "_") && src[i + 1] === c && src[i + 2] === c) {
+      const end = src.indexOf(c + c + c, i + 3);
+      if (end > i + 3) {
+        nest(src.slice(i + 3, end), { bold: true, italic: true });
+        i = end + 3;
+        continue;
+      }
+    }
+    if ((c === "*" || c === "_") && src[i + 1] === c) {
+      const end = src.indexOf(c + c, i + 2);
+      if (end > i + 2) {
+        nest(src.slice(i + 2, end), { bold: true });
+        i = end + 2;
+        continue;
+      }
+    }
+    if (c === "*" || c === "_") {
+      let end = i + 1;
+      // Closing single marker that isn't half of a double marker.
+      while ((end = src.indexOf(c, end)) !== -1 && src[end + 1] === c) end += 2;
+      if (end > i + 1) {
+        nest(src.slice(i + 1, end), { italic: true });
+        i = end + 1;
+        continue;
+      }
+    }
+    text += c;
+    i++;
+  }
+  flush();
+  return spans;
+}
+
+const LIST_ITEM = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+
+/** Markdown note to blocks. Plain-text notes come back as paragraphs. */
+export function parseNote(md: string): NoteBlock[] {
+  const blocks: NoteBlock[] = [];
+  const indents: number[] = [];
+  let para: string[] = [];
+  const endPara = () => {
+    if (para.length) blocks.push({ kind: "paragraph", depth: 0, spans: parseInline(para.join("\n")) });
+    para = [];
+  };
+
+  for (const raw of md.replace(/\r\n?/g, "\n").split("\n")) {
+    // Hard line breaks: trailing "  " or "\".
+    const line = raw.replace(/( {2,}|\\)$/, "");
+    const item = line.match(LIST_ITEM);
+    if (item) {
+      endPara();
+      const indent = item[1].length;
+      while (indents.length && indent < indents[indents.length - 1]) indents.pop();
+      if (!indents.length || indent > indents[indents.length - 1]) indents.push(indent);
+      blocks.push({
+        kind: /\d/.test(item[2]) ? "ordered" : "bullet",
+        depth: indents.length - 1,
+        spans: parseInline(item[3]),
+      });
+    } else if (!line.trim()) {
+      endPara();
+      indents.length = 0;
+    } else {
+      para.push(line.trim());
+    }
+  }
+  endPara();
+  return blocks;
+}
+
+/** Numbers for ordered items, restarting per list and nesting level. */
+export function listNumbers(blocks: NoteBlock[]): number[] {
+  const counters: number[] = [];
+  return blocks.map((b, i) => {
+    const prev = blocks[i - 1];
+    if (b.kind === "paragraph") {
+      counters.length = 0;
+      return 0;
+    }
+    counters.length = b.depth + 1;
+    const continues = prev && prev.kind !== "paragraph" && (prev.depth > b.depth || (prev.depth === b.depth && prev.kind === b.kind));
+    counters[b.depth] = continues ? (counters[b.depth] ?? 0) + 1 : 1;
+    return b.kind === "ordered" ? counters[b.depth] : 0;
+  });
+}
+
+export type NoteRange = { start: number; end: number };
+export type FlatNote = {
+  text: string;
+  /** Styled inline runs (bold, italic, link). */
+  runs: Array<NoteRange & Omit<NoteSpan, "text">>;
+  /** One per block: list type and nesting for the Figma paragraph. */
+  lines: Array<NoteRange & Pick<NoteBlock, "kind" | "depth">>;
+};
+
+/**
+ * Note Markdown as plain text plus ranges, for a Figma text layer. Blocks become
+ * paragraphs ("\n"); line breaks inside a block become U+2028 so they stay one paragraph.
+ */
+export function flattenNote(md: string): FlatNote {
+  const flat: FlatNote = { text: "", runs: [], lines: [] };
+  parseNote(md).forEach((block, i) => {
+    if (i) flat.text += "\n";
+    const lineStart = flat.text.length;
+    for (const { text, ...style } of block.spans) {
+      const start = flat.text.length;
+      flat.text += text.replace(/\n/g, " ");
+      if (style.bold || style.italic || style.href) flat.runs.push({ start, end: flat.text.length, ...style });
+    }
+    flat.lines.push({ start: lineStart, end: flat.text.length, kind: block.kind, depth: block.depth });
+  });
+  return flat;
+}

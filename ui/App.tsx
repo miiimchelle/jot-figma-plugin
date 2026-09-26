@@ -17,6 +17,8 @@ export function App() {
   const [error, setError] = useState("");
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [form, setForm] = useState<Form>(EMPTY_FORM);
+  // Bumped whenever the form is replaced rather than typed into, so the Note editor reloads.
+  const [formKey, setFormKey] = useState(0);
   const [display, setDisplay] = useState<AuthorDisplay>(DEFAULT_AUTHOR_DISPLAY);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
@@ -38,6 +40,7 @@ export function App() {
   function exitEditMode() {
     setEditingId(null);
     setForm((f) => ({ ...f, heading: "", note: "" }));
+    setFormKey((k) => k + 1);
   }
 
   useEffect(() => {
@@ -104,9 +107,10 @@ export function App() {
     setError("");
     setEditingId(e.id);
     setForm({ tag: e.type || NO_TAG, heading: e.heading || "", note: e.note });
+    setFormKey((k) => k + 1);
     if (e.display) setDisplay(e.display);
     setTab(TAB.write);
-    setTimeout(() => document.getElementById("note")?.focus());
+    setTimeout(() => (document.getElementById("note") as HTMLElement | null)?.focus());
   }
 
   function saveFileKey() {
@@ -131,6 +135,7 @@ export function App() {
     [TAB.write]: (
       <WritePanel
         form={form}
+        formKey={formKey}
         onFormChange={setForm}
         display={display}
         onDisplayChange={changeDisplay}
@@ -152,6 +157,7 @@ export function App() {
         }}
         onCopy={copyMarkdown}
         onGoTo={(e) => send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId! })}
+        onOpenLink={(url) => send({ type: "OPEN_URL", url })}
         onEdit={edit}
         onLink={(e) => {
           setError("");

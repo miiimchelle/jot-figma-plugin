@@ -1,5 +1,6 @@
 import { Button, Dropdown, TextboxMultiline } from "@create-figma-plugin/ui";
 import { ENTRY_TYPES, TAG_LABELS, JournalEntry, filterEntries, isEntryType } from "../logic";
+import { NoteView } from "./NoteView";
 
 const FILTER_OPTIONS = [
   { value: "all", text: "All tags" },
@@ -19,6 +20,7 @@ export type EntryActions = {
   onLink: (e: JournalEntry) => void;
   onUnlink: (e: JournalEntry) => void;
   onDelete: (e: JournalEntry) => void;
+  onOpenLink: (url: string) => void;
 };
 
 type Props = EntryActions & {
@@ -77,7 +79,7 @@ export function EntriesPanel(props: Props) {
   );
 }
 
-function EntryRow({ entry: e, onGoTo, onEdit, onLink, onUnlink, onDelete }: EntryActions & { entry: JournalEntry }) {
+function EntryRow({ entry: e, onGoTo, onEdit, onLink, onUnlink, onDelete, onOpenLink }: EntryActions & { entry: JournalEntry }) {
   const tag = isEntryType(e.type) ? e.type : undefined;
   const linked = e.pageName && e.nodeName ? `${e.pageName} → ${e.nodeName}` : e.pageName || "(not linked)";
   const goTo = e.nodeId ? () => onGoTo(e) : undefined;
@@ -103,7 +105,7 @@ function EntryRow({ entry: e, onGoTo, onEdit, onLink, onUnlink, onDelete }: Entr
         </span>
       </div>
       {e.heading && <div class="entry-heading">{e.heading}</div>}
-      <div class="entry-note">{e.note}</div>
+      <NoteView note={e.note} onOpenLink={onOpenLink} />
       <div class="entry-linked">Linked to: {linked}</div>
       {/* Buttons must not trigger the row's jump-to-layer click. */}
       <div class="entry-actions" onClick={(ev) => ev.stopPropagation()} onKeyDown={(ev) => ev.stopPropagation()}>

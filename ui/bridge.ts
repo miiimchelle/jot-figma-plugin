@@ -13,7 +13,8 @@ export type OutMessage =
   | { type: "LINK_ENTRY"; id: string }
   | { type: "UNLINK_ENTRY"; id: string }
   | { type: "GO_TO_ENTRY"; id: string; nodeId: string }
-  | { type: "EXPORT_MD" };
+  | { type: "EXPORT_MD" }
+  | { type: "OPEN_URL"; url: string };
 
 // Messages the plugin sends to the UI.
 export type InMessage =

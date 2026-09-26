@@ -7,6 +7,7 @@ import {
   StickyPalette,
   hexToRgb,
   stackYs,
+  flattenNote,
   STICKY_STACK_GAP,
 } from "./logic";
 
@@ -40,6 +41,42 @@ async function loadFonts(): Promise<string> {
     ]);
     return FALLBACK_FAMILY;
   }
+}
+
+/** Font style for a run. Italic styles load on demand; a missing one falls back to upright. */
+async function runStyle(family: string, bold: boolean, italic: boolean): Promise<string> {
+  const upright = bold ? "Bold" : "Regular";
+  if (!italic) return upright;
+  const style = bold ? "Bold Italic" : "Italic";
+  try {
+    await figma.loadFontAsync({ family, style });
+    return style;
+  } catch {
+    return upright;
+  }
+}
+
+/** Note text with its Markdown formatting: bold/italic, links, bullet and numbered lists. */
+async function noteText(family: string, md: string, ink: string): Promise<TextNode> {
+  const flat = flattenNote(md);
+  const t = text(family, false, 14, flat.text, ink);
+  t.paragraphSpacing = 8;
+  t.listSpacing = 4;
+  for (const run of flat.runs) {
+    if (run.bold || run.italic) {
+      t.setRangeFontName(run.start, run.end, { family, style: await runStyle(family, !!run.bold, !!run.italic) });
+    }
+    if (run.href) {
+      t.setRangeHyperlink(run.start, run.end, { type: "URL", value: run.href });
+      t.setRangeTextDecoration(run.start, run.end, "UNDERLINE");
+    }
+  }
+  for (const line of flat.lines) {
+    if (line.kind === "paragraph" || line.start === line.end) continue;
+    t.setRangeListOptions(line.start, line.end, { type: line.kind === "bullet" ? "UNORDERED" : "ORDERED" });
+    if (line.depth) t.setRangeIndentation(line.start, line.end, line.depth);
+  }
+  return t;
 }
 
 function autoFrame(name: string, direction: "VERTICAL" | "HORIZONTAL"): FrameNode {
@@ -161,7 +198,7 @@ export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
     column.appendChild(h);
     fillWidth(h);
   }
-  const n = text(family, false, 14, c.note, p.ink);
+  const n = await noteText(family, c.note, p.ink);
   column.appendChild(n);
   fillWidth(n);
 

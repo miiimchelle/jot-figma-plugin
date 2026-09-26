@@ -61,6 +61,10 @@
   },
   "dependencies": {
     "@create-figma-plugin/ui": "^4.0.3",
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/markdown": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
     "preact": "^10.29.8"
   }
 }

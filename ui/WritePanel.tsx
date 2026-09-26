@@ -1,6 +1,7 @@
-import { Button, Checkbox, Container, Dropdown, Textbox, TextboxMultiline } from "@create-figma-plugin/ui";
+import { Button, Checkbox, Dropdown, Textbox } from "@create-figma-plugin/ui";
 import { ENTRY_TYPES, TAG_LABELS, AuthorDisplay } from "../logic";
 import { Field } from "./Field";
+import { NoteEditor } from "./NoteEditor";
 
 /** "none" stands in for "no tag" because the dropdown needs a non-empty value. */
 export const NO_TAG = "none";
@@ -21,6 +22,8 @@ export type Form = { tag: string; heading: string; note: string };
 
 type Props = {
   form: Form;
+  /** Bumped when the form is replaced from outside (edit, cancel, reset). */
+  formKey: number;
   onFormChange: (form: Form) => void;
   display: AuthorDisplay;
   onDisplayChange: (display: AuthorDisplay) => void;
@@ -29,10 +32,10 @@ type Props = {
   onCancel: () => void;
 };
 
-export function WritePanel({ form, onFormChange, display, onDisplayChange, editing, onSave, onCancel }: Props) {
+export function WritePanel({ form, formKey, onFormChange, display, onDisplayChange, editing, onSave, onCancel }: Props) {
   return (
-    <div class="panel">
-      <Container space="medium">
+    <div class="panel write-panel">
+      <div class="write-body">
         <Field label="Tag" hint="What kind of thinking are you capturing?">
           <Dropdown options={TAG_OPTIONS} value={form.tag} onValueChange={(tag) => onFormChange({ ...form, tag })} />
         </Field>
@@ -46,15 +49,17 @@ export function WritePanel({ form, onFormChange, display, onDisplayChange, editi
           />
         </Field>
 
-        <Field label="Note" hint="Capture the why, trade-offs, or context behind this.">
-          <TextboxMultiline
-            id="note"
-            rows={5}
-            placeholder="e.g. We chose X over Y because…"
+        {/* Grows to fill the space above the pinned Save button. */}
+        <div class="field field-grow">
+          <div class="field-label">Note</div>
+          <div class="field-hint">Capture the why, trade-offs, or context behind this.</div>
+          <NoteEditor
             value={form.note}
-            onValueInput={(note) => onFormChange({ ...form, note })}
+            contentKey={formKey}
+            onChange={(note) => onFormChange({ ...form, note })}
+            placeholder="e.g. We chose X over Y because…"
           />
-        </Field>
+        </div>
 
         <Field label="Show on sticky">
           <div class="toggle-row">
@@ -69,18 +74,18 @@ export function WritePanel({ form, onFormChange, display, onDisplayChange, editi
             ))}
           </div>
         </Field>
+      </div>
 
-        <div class="button-stack">
-          <Button fullWidth onClick={onSave}>
-            {editing ? "Update entry" : "Save entry"}
+      <div class="write-footer">
+        {editing && (
+          <Button fullWidth secondary onClick={onCancel}>
+            Cancel edit
           </Button>
-          {editing && (
-            <Button fullWidth secondary onClick={onCancel}>
-              Cancel edit
-            </Button>
-          )}
-        </div>
-      </Container>
+        )}
+        <Button fullWidth onClick={onSave}>
+          {editing ? "Update entry" : "Save entry"}
+        </Button>
+      </div>
     </div>
   );
 }

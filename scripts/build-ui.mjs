@@ -18,13 +18,15 @@ const globalCss = {
 const inlineHtml = {
   name: "inline-html",
   setup(build) {
-    build.onEnd((result) => {
+    build.onEnd(async (result) => {
       if (result.errors.length) return;
       const file = (ext) => result.outputFiles.find((f) => f.path.endsWith(ext))?.text ?? "";
       const clashes = caseCollisions(file(".css"));
       if (clashes.length) throw new Error(`CSS class names differ only by case: ${JSON.stringify(clashes)}`);
+      // Minify JS names in a second pass so CSS module class names (strings) stay long.
+      const { code } = await esbuild.transform(file(".js"), { minify: true, target: "es2017" });
       // Keep a literal </script> inside the bundle from closing the tag.
-      const js = file(".js").replace(/<\/script/gi, "<\\/script");
+      const js = code.replace(/<\/script/gi, "<\\/script");
       const html = `<!doctype html>
 <html>
 <head>

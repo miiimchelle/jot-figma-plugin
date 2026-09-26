@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/preact";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Editor } from "@tiptap/core";
 import { App } from "../ui/App";
 
 type Msg = { type: string; [key: string]: unknown };
@@ -22,6 +23,11 @@ const last = (type: string) => sent.filter((m) => m.type === type).pop();
 const pick = (value: string) => fireEvent.click(document.querySelector(`input[type=radio][value="${value}"]`)!);
 
 const type = (id: string, value: string) => fireEvent.input(document.getElementById(id)!, { target: { value } });
+
+/** The Note field is a Tiptap editor; Tiptap exposes it on its DOM node. */
+const noteEditor = () => (document.getElementById("note") as unknown as { editor: Editor }).editor;
+const setNote = (md: string) => act(() => void noteEditor().commands.setContent(md, { contentType: "markdown" }));
+const noteMarkdown = () => noteEditor().getMarkdown().trim();
 
 const click = (text: string) => fireEvent.click(screen.getByText(text, { selector: "button, button *" }));
 
@@ -57,7 +63,7 @@ describe("Write", () => {
   beforeEach(() => void render(<App />));
 
   it("saves with default tag, empty heading and all author toggles on", () => {
-    type("note", "We chose X");
+    setNote("We chose X");
     click("Save entry");
     expect(last("ADD_ENTRY")).toEqual({
       type: "ADD_ENTRY",
@@ -86,9 +92,9 @@ describe("Write", () => {
   });
 
   it("clears the form when the journal comes back after saving", () => {
-    type("note", "Draft");
+    setNote("Draft");
     receive({ type: "JOURNAL", entries: [] });
-    expect((document.getElementById("note") as HTMLTextAreaElement).value).toBe("");
+    expect(noteMarkdown()).toBe("");
   });
 
   it("shows plugin errors and clears them on save", () => {
@@ -96,6 +102,47 @@ describe("Write", () => {
     expect(screen.getByRole("alert").textContent).toContain("Write a note first.");
     click("Save entry");
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("Note editor", () => {
+  beforeEach(() => void render(<App />));
+
+  const tool = (label: string) => {
+    const button = screen.getByLabelText(label);
+    fireEvent.mouseDown(button);
+    fireEvent.click(button);
+  };
+
+  it("pins Save to the bottom, below the editor", () => {
+    expect(document.querySelector(".write-footer")?.textContent).toBe("Save entry");
+  });
+
+  it("saves formatting from the toolbar as Markdown", () => {
+    setNote("Ship it");
+    act(() => void noteEditor().commands.selectAll());
+    tool("Bold");
+    act(() => void noteEditor().commands.selectAll());
+    tool("Bullet list");
+    expect(screen.getByLabelText("Bold").getAttribute("aria-pressed")).toBe("true");
+    click("Save entry");
+    expect(last("ADD_ENTRY")?.note).toBe("- **Ship it**");
+  });
+
+  it("adds a link to the selected text", () => {
+    setNote("Spec");
+    act(() => void noteEditor().commands.selectAll());
+    tool("Link");
+    type("noteLinkUrl", "https://x.io");
+    click("Apply");
+    expect(noteMarkdown()).toBe("[Spec](https://x.io)");
+  });
+
+  it("loads a formatted note in edit mode", () => {
+    pick("Entries");
+    receive({ type: "JOURNAL", entries: [{ id: "a", createdAt: "2025-01-01T00:00:00Z", note: "*Why*\n\n1. one" }] });
+    click("Edit");
+    expect(noteMarkdown()).toBe("*Why*\n\n1. one");
   });
 });
 
@@ -118,7 +165,7 @@ describe("Edit mode", () => {
     expect(last("SET_PREFS")).toBeUndefined();
     click("Cancel edit");
     expect(screen.getByText("Save entry")).toBeTruthy();
-    expect((document.getElementById("note") as HTMLTextAreaElement).value).toBe("");
+    expect(noteMarkdown()).toBe("");
     expect(last("GET_PREFS")).toBeDefined();
   });
 });
@@ -144,6 +191,16 @@ describe("Entries", () => {
     expect(rows[1].textContent).toContain("Linked to: (not linked)");
     expect(rows[2].querySelector(".pill")).toBeNull();
     expect(screen.getByText("3 entries")).toBeTruthy();
+  });
+
+  it("renders note formatting and opens links through the plugin", () => {
+    openEntries([{ ...ENTRIES[0], note: "**Bold** [spec](https://x.io)\n\n- one\n\n1. first" }]);
+    const note = document.querySelector(".entry-note")!;
+    expect(note.querySelector("strong")?.textContent).toBe("Bold");
+    expect([...note.querySelectorAll(".note-marker")].map((m) => m.textContent)).toEqual(["•", "1."]);
+    fireEvent.click(note.querySelector("a")!);
+    expect(last("OPEN_URL")).toEqual({ type: "OPEN_URL", url: "https://x.io" });
+    expect(last("GO_TO_ENTRY")).toBeUndefined();
   });
 
   it("shows empty states", () => {
