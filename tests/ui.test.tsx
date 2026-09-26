@@ -37,11 +37,10 @@ function openEntries(entries: object[] = ENTRIES) {
 }
 
 describe("start-up", () => {
-  it("requests journal, file key and prefs, and sizes the window", () => {
+  it("requests journal, file key and prefs, and never resizes the window", () => {
     render(<App />);
-    expect(sent.map((m) => m.type)).toEqual(
-      expect.arrayContaining(["GET_JOURNAL", "GET_FILE_KEY", "GET_PREFS", "RESIZE"])
-    );
+    expect(sent.map((m) => m.type)).toEqual(["GET_JOURNAL", "GET_FILE_KEY", "GET_PREFS"]);
+    expect(screen.queryByLabelText("Drag to resize")).toBeNull();
   });
 
   it("opens Settings on first launch without a file key, only once", () => {
@@ -234,31 +233,5 @@ describe("Settings", () => {
     expect(last("SET_FILE_KEY")).toEqual({ type: "SET_FILE_KEY", fileKey: "ABC123def456" });
     receive({ type: "FILE_KEY", fileKey: "ABC123def456" });
     expect(screen.getByText("File key saved: ABC123def456")).toBeTruthy();
-  });
-});
-
-describe("Auto-resize", () => {
-  const setHeight = (h: number) => Object.defineProperty(document.body, "scrollHeight", { value: h, configurable: true });
-
-  it("grows and shrinks with content", () => {
-    render(<App />);
-    setHeight(676);
-    receive({ type: "ERROR", message: "x" });
-    expect(last("RESIZE")?.height).toBe(700);
-    setHeight(100);
-    receive({ type: "ERROR", message: "y" });
-    expect(last("RESIZE")?.height).toBe(460);
-  });
-
-  it("stops auto-resizing once the user drags the handle", () => {
-    render(<App />);
-    const handle = screen.getByLabelText("Drag to resize");
-    fireEvent.mouseDown(handle, { clientY: 0 });
-    fireEvent.mouseMove(document, { clientY: 100 });
-    fireEvent.mouseUp(document);
-    const count = sent.filter((m) => m.type === "RESIZE").length;
-    setHeight(676);
-    receive({ type: "ERROR", message: "x" });
-    expect(sent.filter((m) => m.type === "RESIZE")).toHaveLength(count);
   });
 });

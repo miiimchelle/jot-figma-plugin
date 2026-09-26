@@ -4,7 +4,6 @@ import { AuthorDisplay, DEFAULT_AUTHOR_DISPLAY, JournalEntry, extractFileKey } f
 import { InMessage, send } from "./bridge";
 import { EntriesPanel } from "./EntriesPanel";
 import { SettingsPanel } from "./SettingsPanel";
-import { useAutoResize } from "./useAutoResize";
 import { Form, NO_TAG, WritePanel } from "./WritePanel";
 
 // Tab values double as their labels in the Tabs component.
@@ -26,7 +25,6 @@ export function App() {
   const [fileUrl, setFileUrl] = useState("");
   const [savedKey, setSavedKey] = useState("");
   const fileKeySeen = useRef(false);
-  const onResizeStart = useAutoResize();
 
   function changeTab(next: Tab) {
     setTab(next);
@@ -189,7 +187,6 @@ export function App() {
         </div>
       )}
       {panels[tab]}
-      <div class="resize-handle" role="separator" aria-label="Drag to resize" onMouseDown={onResizeStart} />
     </div>
   );
 }

@@ -130,10 +130,6 @@ async function handleSetPrefs(msg: { display: unknown }) {
   await figma.clientStorage.setAsync(PREFS_STORAGE, { display: parseAuthorDisplay(msg.display) });
 }
 
-function handleResize(msg: { width: number; height: number }) {
-  figma.ui.resize(msg.width, msg.height);
-}
-
 type EntryInput = {
   entryType?: unknown;
   heading?: unknown;
@@ -295,7 +291,6 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   GET_JOURNAL: handleGetJournal,
   GET_FILE_KEY: handleGetFileKey,
   SET_FILE_KEY: handleSetFileKey,
-  RESIZE: handleResize,
   GET_PREFS: handleGetPrefs,
   SET_PREFS: handleSetPrefs,
   ADD_ENTRY: handleAddEntry,
@@ -311,7 +306,8 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
 // Init
 // ---------------------------------------------------------------------------
 
-figma.showUI(__html__, { width: 360, height: 520, themeColors: true });
+// Fixed size: the UI fills this window and scrolls inside it.
+figma.showUI(__html__, { width: 360, height: 720, themeColors: true });
 sendFileKey();
 
 figma.ui.onmessage = async (msg) => {

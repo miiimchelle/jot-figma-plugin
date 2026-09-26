@@ -7,7 +7,6 @@ export type OutMessage =
   | { type: "GET_PREFS" }
   | { type: "SET_PREFS"; display: AuthorDisplay }
   | { type: "SET_FILE_KEY"; fileKey: string }
-  | { type: "RESIZE"; width: number; height: number }
   | { type: "ADD_ENTRY"; entryType: string; heading: string; note: string; display: AuthorDisplay }
   | { type: "UPDATE_ENTRY"; id: string; entryType: string; heading: string; note: string; display: AuthorDisplay }
   | { type: "DELETE_ENTRY"; id: string }

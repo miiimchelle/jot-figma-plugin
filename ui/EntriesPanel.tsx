@@ -38,7 +38,7 @@ export function EntriesPanel(props: Props) {
     filter === "all" ? plural(entries.length, "entry", "entries") : `${filtered.length} of ${plural(entries.length, "entry", "entries")}`;
 
   return (
-    <div class="panel">
+    <div class="panel entries-panel">
       <div class="toolbar">
         <div class="toolbar-filter">
           <Dropdown options={FILTER_OPTIONS} value={filter} onValueChange={onFilterChange} />
