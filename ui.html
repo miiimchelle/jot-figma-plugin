@@ -711,9 +711,17 @@
 
         const linkBtn = document.createElement("button");
         linkBtn.className = "action-btn";
-        linkBtn.textContent = "Link to selection";
-        linkBtn.title = "Link this note to the layer or frame selected in Figma";
+        linkBtn.textContent = e.nodeId ? "Change link" : "Link to selection";
+        linkBtn.title = e.nodeId
+          ? "Move this note to the layer or frame selected in Figma"
+          : "Link this note to the layer or frame selected in Figma";
         linkBtn.onclick = (ev) => { ev.stopPropagation(); setError(""); send({ type: "LINK_ENTRY", id: e.id }); };
+
+        const unlinkBtn = document.createElement("button");
+        unlinkBtn.className = "action-btn";
+        unlinkBtn.textContent = "Unlink";
+        unlinkBtn.title = "Remove the link and its sticky. The note stays in Jot.";
+        unlinkBtn.onclick = (ev) => { ev.stopPropagation(); setError(""); send({ type: "UNLINK_ENTRY", id: e.id }); };
 
         const delBtn = document.createElement("button");
         delBtn.className = "action-btn action-btn--destructive";
@@ -726,6 +734,7 @@
 
         actions.appendChild(editBtn);
         actions.appendChild(linkBtn);
+        if (e.nodeId) actions.appendChild(unlinkBtn);
         actions.appendChild(delBtn);
         list.appendChild(item);
       }

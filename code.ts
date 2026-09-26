@@ -223,6 +223,26 @@ async function handleLinkEntry(msg: { id: string }) {
   await syncCanvas(entries[idx]);
 }
 
+// Keep the note, drop its link and sticky.
+async function handleUnlinkEntry(msg: { id: string }) {
+  const entries = getJournal();
+  const idx = entries.findIndex((e) => e.id === msg.id);
+  if (idx === -1) { err("Entry not found."); return; }
+
+  try {
+    await removeSticky(entries[idx]);
+  } catch (e) {
+    console.error("Jot: sticky removal failed", e);
+  }
+
+  const { nodeId: _n, nodeName: _nn, nodeUrl: _u, pageId: _p, pageName: _pn, stickyNodeId: _s, ...rest } = entries[idx];
+  entries[idx] = { ...rest, updatedAt: new Date().toISOString() };
+
+  setJournal(entries);
+  sendJournal(entries);
+  figma.notify("Unlinked");
+}
+
 async function handleDeleteEntry(msg: { id: string }) {
   const entries = getJournal();
   const entry = entries.find((e) => e.id === msg.id);
@@ -282,6 +302,7 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   UPDATE_ENTRY: handleUpdateEntry,
   DELETE_ENTRY: handleDeleteEntry,
   LINK_ENTRY: handleLinkEntry,
+  UNLINK_ENTRY: handleUnlinkEntry,
   GO_TO_ENTRY: handleGoToEntry,
   EXPORT_MD: handleExportMd,
 };

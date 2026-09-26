@@ -804,20 +804,36 @@ describe("UI", () => {
         ],
       });
 
-    it("has no kind filter, badge or Change to buttons", () => {
+    it("has no kind filter or badge", () => {
       journal();
       expect(doc.getElementById("filterKind")).toBeNull();
       expect(doc.querySelector(".kind-badge")).toBeNull();
-      const labels = [...doc.querySelectorAll(".action-btn")].map((b) => b.textContent);
-      expect(labels).toEqual(["Edit", "Link to selection", "Delete", "Edit", "Link to selection", "Delete"]);
     });
 
-    it("sends LINK_ENTRY from Link to selection", () => {
-      journal();
+    it("shows link buttons by link state and sends their messages", () => {
+      simulatePluginMessage(win, {
+        type: "JOURNAL",
+        entries: [
+          { id: "u1", createdAt: "2025-01-01", note: "A" },
+          { id: "l1", createdAt: "2025-01-02", note: "B", nodeId: "1:2", nodeName: "Frame", pageName: "P" },
+        ],
+      });
+      const labels = (i: number) =>
+        [...doc.querySelectorAll(".item")[i].querySelectorAll(".action-btn")].map((b) => b.textContent);
+      expect(labels(0)).toEqual(["Edit", "Link to selection", "Delete"]);
+      expect(labels(1)).toEqual(["Edit", "Change link", "Unlink", "Delete"]);
+
       messages.length = 0;
-      const btn = [...doc.querySelectorAll(".action-btn")].find((b) => b.textContent === "Link to selection");
-      (btn as HTMLElement).click();
-      expect(messages).toEqual([{ type: "LINK_ENTRY", id: "s1" }]);
+      const click = (text: string) =>
+        ([...doc.querySelectorAll(".action-btn")].find((b) => b.textContent === text) as HTMLElement).click();
+      click("Link to selection");
+      click("Change link");
+      click("Unlink");
+      expect(messages).toEqual([
+        { type: "LINK_ENTRY", id: "u1" },
+        { type: "LINK_ENTRY", id: "l1" },
+        { type: "UNLINK_ENTRY", id: "l1" },
+      ]);
     });
 
     it("renders heading and hides empty tag pill", () => {

@@ -323,6 +323,20 @@ describe("Plugin message handling", () => {
       expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Select a layer or frame, not a Jot sticky." });
     });
 
+    it("UNLINK_ENTRY keeps the note but drops its link and sticky", async () => {
+      const { handler, postMessage, notify, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [before] = lastJournal(postMessage);
+      await handler({ type: "UNLINK_ENTRY", id: before.id });
+      const [after] = lastJournal(postMessage);
+      expect(canvas.nodes.has(before.stickyNodeId)).toBe(false);
+      expect(after).toMatchObject({ id: before.id, note: "N" });
+      for (const k of ["nodeId", "nodeName", "nodeUrl", "pageId", "pageName", "stickyNodeId"]) {
+        expect(after).not.toHaveProperty(k);
+      }
+      expect(notify).toHaveBeenCalledWith("Unlinked");
+    });
+
     it("DELETE_ENTRY removes the sticky", async () => {
       const { handler, postMessage, canvas } = await loadPlugin();
       await handler({ type: "ADD_ENTRY", note: "N" });
