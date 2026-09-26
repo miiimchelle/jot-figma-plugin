@@ -6,12 +6,46 @@ export function isEntryType(value: unknown): value is EntryType {
   return typeof value === "string" && (ENTRY_TYPES as readonly string[]).includes(value);
 }
 
+export const ENTRY_KINDS = ["sticky", "annotation"] as const;
+
+export type EntryKind = (typeof ENTRY_KINDS)[number];
+
+export function isEntryKind(value: unknown): value is EntryKind {
+  return typeof value === "string" && (ENTRY_KINDS as readonly string[]).includes(value);
+}
+
+/** Tag is optional: "" / undefined means no tag. */
+export function parseTag(value: unknown): EntryType | undefined | null {
+  if (value === undefined || value === "") return undefined;
+  return isEntryType(value) ? value : null;
+}
+
+export type AuthorDisplay = {
+  avatar: boolean;
+  name: boolean;
+  timestamp: boolean;
+};
+
+export const DEFAULT_AUTHOR_DISPLAY: AuthorDisplay = { avatar: true, name: true, timestamp: true };
+
+export function parseAuthorDisplay(value: unknown): AuthorDisplay {
+  const v = (value ?? {}) as Partial<Record<keyof AuthorDisplay, unknown>>;
+  return {
+    avatar: typeof v.avatar === "boolean" ? v.avatar : DEFAULT_AUTHOR_DISPLAY.avatar,
+    name: typeof v.name === "boolean" ? v.name : DEFAULT_AUTHOR_DISPLAY.name,
+    timestamp: typeof v.timestamp === "boolean" ? v.timestamp : DEFAULT_AUTHOR_DISPLAY.timestamp,
+  };
+}
+
 export type JournalEntry = {
   id: string;
   createdAt: string;
   updatedAt?: string;
-  type: EntryType;
+  kind: EntryKind;
+  type?: EntryType;
+  heading?: string;
   note: string;
+  display?: AuthorDisplay;
 
   nodeId?: string;
   nodeName?: string;
@@ -34,10 +68,16 @@ export function buildNodeUrl(fileKey: string | undefined, nodeId?: string): stri
   return `https://www.figma.com/design/${fileKey}/?node-id=${encodeURIComponent(nodeIdForUrl)}`;
 }
 
+/** Entries saved before kinds existed become stickies. */
+export function migrateEntry(entry: JournalEntry): JournalEntry {
+  return isEntryKind(entry.kind) ? entry : { ...entry, kind: "sticky" };
+}
+
 export function parseJournal(raw: string): JournalEntry[] {
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as JournalEntry[];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as JournalEntry[]).map(migrateEntry) : [];
   } catch {
     return [];
   }
@@ -55,7 +95,8 @@ export function toMarkdown(entries: JournalEntry[], fileKey?: string): string {
       ? ` (edited ${new Date(e.updatedAt).toLocaleString()})`
       : ``;
 
-    lines.push(`## ${e.type} — ${created}${edited}`);
+    lines.push(`## ${e.type ?? e.kind} — ${created}${edited}`);
+    if (e.heading) lines.push(`**${e.heading}**`, ``);
 
     const url = e.nodeUrl ?? buildNodeUrl(fileKey, e.nodeId);
 
@@ -82,9 +123,21 @@ export function extractFileKey(input: string): string | null {
   return null;
 }
 
-export function filterEntries(entries: JournalEntry[], filterType: string): JournalEntry[] {
-  if (filterType === "all") return entries;
-  return entries.filter((e) => e.type === filterType);
+export function filterEntries(
+  entries: JournalEntry[],
+  filterType: string,
+  filterKind = "all"
+): JournalEntry[] {
+  return entries.filter(
+    (e) =>
+      (filterType === "all" || e.type === filterType) &&
+      (filterKind === "all" || e.kind === filterKind)
+  );
+}
+
+export function cleanHeading(raw: unknown): string | undefined {
+  const trimmed = String(raw ?? "").trim();
+  return trimmed || undefined;
 }
 
 export function cleanNote(raw: unknown): string | null {

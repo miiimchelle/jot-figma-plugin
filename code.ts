@@ -7,7 +7,10 @@ import {
   toMarkdown,
   cleanNote,
   generateEntryId,
-  isEntryType,
+  isEntryKind,
+  parseTag,
+  cleanHeading,
+  parseAuthorDisplay,
 } from "./logic";
 
 figma.notify("Jot v2.0.0 ready");
@@ -87,16 +90,38 @@ function handleResize(msg: { width: number; height: number }) {
   figma.ui.resize(msg.width, msg.height);
 }
 
-function handleAddEntry(msg: { entryType: unknown; note: unknown }) {
+type EntryInput = {
+  kind?: unknown;
+  entryType?: unknown;
+  heading?: unknown;
+  note: unknown;
+  display?: unknown;
+};
+
+function parseEntryInput(msg: EntryInput) {
   const note = cleanNote(msg.note);
-  if (!note) { err("Write a note first."); return; }
-  if (!isEntryType(msg.entryType)) { err("Unknown entry type."); return; }
+  if (!note) { err("Write a note first."); return null; }
+  const type = parseTag(msg.entryType);
+  if (type === null) { err("Unknown entry type."); return null; }
+  const kind = msg.kind === undefined ? "sticky" : msg.kind;
+  if (!isEntryKind(kind)) { err("Unknown entry kind."); return null; }
+  return {
+    kind,
+    type,
+    heading: cleanHeading(msg.heading),
+    note,
+    display: parseAuthorDisplay(msg.display),
+  };
+}
+
+function handleAddEntry(msg: EntryInput) {
+  const input = parseEntryInput(msg);
+  if (!input) return;
 
   const entry: JournalEntry = {
     id: generateEntryId(),
     createdAt: new Date().toISOString(),
-    type: msg.entryType,
-    note,
+    ...input,
     ...selectionContext(),
   };
 
@@ -106,10 +131,9 @@ function handleAddEntry(msg: { entryType: unknown; note: unknown }) {
   figma.notify("Saved to Jot");
 }
 
-function handleUpdateEntry(msg: { id: string; entryType: unknown; note: unknown }) {
-  const note = cleanNote(msg.note);
-  if (!note) { err("Write a note first."); return; }
-  if (!isEntryType(msg.entryType)) { err("Unknown entry type."); return; }
+function handleUpdateEntry(msg: EntryInput & { id: string }) {
+  const input = parseEntryInput(msg);
+  if (!input) return;
 
   const entries = getJournal();
   const idx = entries.findIndex((e) => e.id === msg.id);
@@ -117,14 +141,28 @@ function handleUpdateEntry(msg: { id: string; entryType: unknown; note: unknown 
 
   entries[idx] = {
     ...entries[idx],
-    type: msg.entryType,
-    note,
+    ...input,
+    kind: msg.kind === undefined ? entries[idx].kind : input.kind,
     updatedAt: new Date().toISOString(),
   };
 
   setJournal(entries);
   sendJournal(entries);
   figma.notify("Updated entry");
+}
+
+function handleChangeKind(msg: { id: string; kind: unknown }) {
+  if (!isEntryKind(msg.kind)) { err("Unknown entry kind."); return; }
+
+  const entries = getJournal();
+  const idx = entries.findIndex((e) => e.id === msg.id);
+  if (idx === -1) { err("Entry not found."); return; }
+
+  entries[idx] = { ...entries[idx], kind: msg.kind, updatedAt: new Date().toISOString() };
+
+  setJournal(entries);
+  sendJournal(entries);
+  figma.notify(msg.kind === "annotation" ? "Changed to annotation" : "Changed to sticky");
 }
 
 function handleDeleteEntry(msg: { id: string }) {
@@ -169,6 +207,7 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   ADD_ENTRY: handleAddEntry,
   UPDATE_ENTRY: handleUpdateEntry,
   DELETE_ENTRY: handleDeleteEntry,
+  CHANGE_KIND: handleChangeKind,
   GO_TO_ENTRY: handleGoToEntry,
   EXPORT_MD: handleExportMd,
 };

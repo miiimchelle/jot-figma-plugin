@@ -53,7 +53,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 ## Plan
 
 - [x] 1. Native Figma look: switch UI to Figma theme tokens (light/dark)
-- [ ] 2. Data model: `kind` field + migration in `logic.ts`, tests
+- [x] 2. Data model: `kind` field + migration in `logic.ts`, tests
 - [ ] 3. Add entry tab: kind selector, "Note" label
 - [ ] 4. View entries tab: kind filter, count, badge, Change to buttons, tests
 - [ ] 5. Canvas sync: sticky note frames (create/update/delete), author options, avatar
