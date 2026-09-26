@@ -9,6 +9,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - —
 
 ### Changed
+- Write and Settings use a 4px-grid rhythm: 16px between fields, 8px from label or hint to control, 4px from label to hint. Checkbox labels are centred on their boxes
 - Entries rows use a 4px-grid rhythm: 16px row padding, 8px between the date, content, "Linked to" line and buttons, 4px between heading and note
 
 ### Fixed

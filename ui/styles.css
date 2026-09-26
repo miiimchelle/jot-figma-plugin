@@ -32,14 +32,20 @@ body { overflow: hidden; }
 .error { padding: 8px 16px 0; }
 
 /* Form rows */
-.field { margin-bottom: 12px; }
-.field-label { font-weight: 500; color: var(--figma-color-text); margin-bottom: 4px; }
-.field-hint { color: var(--figma-color-text-secondary); margin-bottom: 6px; }
+/* Form rhythm on a 4px grid: 16px between fields, 8px from label (or hint) to control,
+   4px from a label to its hint. */
+.field { margin-bottom: 16px; }
+.field-label { font-weight: 500; color: var(--figma-color-text); margin-bottom: 8px; }
+.field-label + .field-hint { margin-top: -4px; }
+.field-hint { color: var(--figma-color-text-secondary); margin-bottom: 8px; }
 .toggle-row { display: flex; gap: 16px; }
+/* The library pads checkbox text 4px down (for multi-line labels); centre one-line labels on the 16px box. */
+.checkbox-label { display: block; margin-top: -4px; line-height: 16px; }
 .button-stack { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 /* Write: fields scroll if needed, Note grows, Save is pinned to the bottom. */
-.write-panel { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+.write-panel { display: flex; flex-direction: column; overflow: hidden; padding-top: 16px; padding-bottom: 0; }
 .write-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 0 16px; }
+.write-body > .field:last-child { margin-bottom: 16px; }
 .field-grow { flex: 1; min-height: 200px; display: flex; flex-direction: column; }
 .write-footer {
   flex: none; display: flex; gap: 8px; padding: 12px 16px;

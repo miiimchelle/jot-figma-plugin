@@ -114,6 +114,10 @@ describe("Note editor", () => {
     fireEvent.click(button);
   };
 
+  it("wraps checkbox text so it can be aligned with the box", () => {
+    expect([...document.querySelectorAll(".checkbox-label")].map((l) => l.textContent)).toEqual(["Avatar", "Name", "Timestamp"]);
+  });
+
   it("pins Save to the bottom, below the editor", () => {
     expect(document.querySelector(".write-footer")?.textContent).toBe("Save entry");
   });
