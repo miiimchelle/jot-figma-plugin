@@ -32,7 +32,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 - Heading: optional text field.
 - Toggles: avatar, name, timestamp. Last choice remembered (clientStorage).
 - Avatar: `figma.currentUser.photoUrl` via `figma.createImageAsync`.
-  - Manifest: `permissions: ["currentuser"]`, allow Figma's avatar image domain only (verify exact domain).
+  - Manifest: `permissions: ["currentuser"]`, allow `https://*.figma.com` only. Verify the real photo domain in Figma; initials fallback covers a mismatch.
   - README: update "No network requests" wording.
 - Annotations: heading + author line included in annotation text (no avatar).
 
@@ -56,7 +56,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 - [x] 2. Data model: `kind` field + migration in `logic.ts`, tests
 - [x] 3. Add entry tab: kind selector, heading, "Note" label, author toggles (remembered)
 - [x] 4. View entries tab: kind filter, count, badge, Change to buttons, tests
-- [ ] 5. Canvas sync: sticky note frames (create/update/delete), author options, avatar
+- [x] 5. Canvas sync: sticky note frames (create/update/delete), author options, avatar
 - [ ] 6. Canvas sync: native annotations (create/update/delete)
 - [ ] 7. Export: grouped by kind, tests
 - [ ] 8. `npm run build`, `npm test`, changelog

@@ -12,8 +12,10 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Tags are now optional ("No tag" option)
 - Add entry: Sticky/Annotation switch, heading field, avatar/name/timestamp toggles remembered per user
 - View entries: kind filter, "No tag" filter, count split by kind, kind badge, heading, Change to annotation/sticky buttons
+- Sticky notes on canvas: drawn 24px right of the linked layer, rebuilt on edit (keeping a moved position), removed on delete or change to annotation. Avatar falls back to initials
 
 ### Changed
+- Manifest: `currentuser` permission, network access limited to `*.figma.com` (avatar only)
 - UI follows Figma's light and dark theme (`themeColors`), Inter font
 - Add entry: "Entry type" renamed to "Tag", "Decision note" renamed to "Note"
 

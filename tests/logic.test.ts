@@ -13,6 +13,10 @@ import {
   parseTag,
   parseAuthorDisplay,
   cleanHeading,
+  formatStickyDate,
+  initials,
+  stickyContent,
+  stickyPosition,
   STORAGE_KEY,
   FILE_KEY_STORAGE,
   JournalEntry,
@@ -449,5 +453,28 @@ describe("constants", () => {
 
   it("has correct file key storage key", () => {
     expect(FILE_KEY_STORAGE).toBe("jot.filekey.v1");
+  });
+});
+
+describe("sticky layout", () => {
+  const base = { id: "1", createdAt: "2025-09-29T10:00:00Z", kind: "sticky", note: "N", author: { name: "Luis" } } as JournalEntry;
+
+  it("formats dates as '29 September 2025'", () => {
+    expect(formatStickyDate("2025-09-29T10:00:00Z")).toBe("29 September 2025");
+    expect(formatStickyDate("bad")).toBe("");
+  });
+
+  it("builds initials", () => {
+    expect(initials("michelle luo")).toBe("ML");
+    expect(initials("")).toBe("?");
+  });
+
+  it("drops the footer when every toggle is off", () => {
+    expect(stickyContent({ ...base, display: { avatar: false, name: false, timestamp: false } }).footer).toBeNull();
+    expect(stickyContent(base).footer).toEqual({ avatar: true, name: "Luis", date: "29 September 2025" });
+  });
+
+  it("places the sticky 24px right of the layer", () => {
+    expect(stickyPosition({ x: 10, y: 20, width: 100, height: 50 })).toEqual({ x: 134, y: 20 });
   });
 });

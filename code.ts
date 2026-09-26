@@ -12,7 +12,9 @@ import {
   cleanHeading,
   parseAuthorDisplay,
   PREFS_STORAGE,
+  Author,
 } from "./logic";
+import { syncSticky, removeSticky } from "./canvas";
 
 figma.notify("Jot v2.0.0 ready");
 
@@ -57,6 +59,38 @@ function selectionContext() {
     pageId: figma.currentPage.id,
     pageName: figma.currentPage.name,
   };
+}
+
+function currentAuthor(): Author | undefined {
+  try {
+    const user = figma.currentUser;
+    if (!user) return undefined;
+    return { name: user.name, photoUrl: user.photoUrl ?? undefined };
+  } catch {
+    return undefined;
+  }
+}
+
+function patchEntry(id: string, patch: Partial<JournalEntry>) {
+  const entries = getJournal();
+  const idx = entries.findIndex((e) => e.id === id);
+  if (idx === -1) return;
+  entries[idx] = { ...entries[idx], ...patch };
+  setJournal(entries);
+  sendJournal(entries);
+}
+
+// Journal is saved first; canvas failures never lose the entry.
+async function syncCanvas(entry: JournalEntry) {
+  // Dev Mode is read-only for layers.
+  if (figma.editorType === "dev") return;
+  try {
+    const stickyNodeId = await syncSticky(entry);
+    if (stickyNodeId !== entry.stickyNodeId) patchEntry(entry.id, { stickyNodeId });
+  } catch (e) {
+    console.error("Jot: sticky sync failed", e);
+    err("Saved, but the sticky note could not be drawn.");
+  }
 }
 
 function getPageForNode(node: BaseNode): PageNode | null {
@@ -125,7 +159,7 @@ function parseEntryInput(msg: EntryInput) {
   };
 }
 
-function handleAddEntry(msg: EntryInput) {
+async function handleAddEntry(msg: EntryInput) {
   const input = parseEntryInput(msg);
   if (!input) return;
 
@@ -133,6 +167,7 @@ function handleAddEntry(msg: EntryInput) {
     id: generateEntryId(),
     createdAt: new Date().toISOString(),
     ...input,
+    author: currentAuthor(),
     ...selectionContext(),
   };
 
@@ -140,9 +175,10 @@ function handleAddEntry(msg: EntryInput) {
   setJournal(next);
   sendJournal(next);
   figma.notify("Saved to Jot");
+  await syncCanvas(entry);
 }
 
-function handleUpdateEntry(msg: EntryInput & { id: string }) {
+async function handleUpdateEntry(msg: EntryInput & { id: string }) {
   const input = parseEntryInput(msg);
   if (!input) return;
 
@@ -160,9 +196,10 @@ function handleUpdateEntry(msg: EntryInput & { id: string }) {
   setJournal(entries);
   sendJournal(entries);
   figma.notify("Updated entry");
+  await syncCanvas(entries[idx]);
 }
 
-function handleChangeKind(msg: { id: string; kind: unknown }) {
+async function handleChangeKind(msg: { id: string; kind: unknown }) {
   if (!isEntryKind(msg.kind)) { err("Unknown entry kind."); return; }
 
   const entries = getJournal();
@@ -174,20 +211,35 @@ function handleChangeKind(msg: { id: string; kind: unknown }) {
   setJournal(entries);
   sendJournal(entries);
   figma.notify(msg.kind === "annotation" ? "Changed to annotation" : "Changed to sticky");
+  await syncCanvas(entries[idx]);
 }
 
-function handleDeleteEntry(msg: { id: string }) {
-  const next = getJournal().filter((e) => e.id !== msg.id);
+async function handleDeleteEntry(msg: { id: string }) {
+  const entries = getJournal();
+  const entry = entries.find((e) => e.id === msg.id);
+  const next = entries.filter((e) => e.id !== msg.id);
   setJournal(next);
   sendJournal(next);
   figma.notify("Deleted entry");
+  if (entry) {
+    try {
+      await removeSticky(entry);
+    } catch (e) {
+      console.error("Jot: sticky removal failed", e);
+    }
+  }
 }
 
 // documentAccess: "dynamic-page" requires the async node/page APIs.
-async function handleGoToEntry(msg: { nodeId?: string }) {
-  if (!msg.nodeId) return;
+async function handleGoToEntry(msg: { id?: string; nodeId?: string }) {
+  // Stickies jump to their note on canvas, falling back to the linked layer.
+  const entry = msg.id ? getJournal().find((e) => e.id === msg.id) : undefined;
+  const stickyId = entry?.kind === "sticky" ? entry.stickyNodeId : undefined;
+  const sticky = stickyId ? await figma.getNodeByIdAsync(stickyId) : null;
+  const targetId = sticky && !sticky.removed ? stickyId : (entry?.nodeId ?? msg.nodeId);
+  if (!targetId) return;
 
-  const node = await figma.getNodeByIdAsync(msg.nodeId);
+  const node = await figma.getNodeByIdAsync(targetId);
   if (!node || node.removed) {
     err("Linked layer/frame no longer exists.");
     return;

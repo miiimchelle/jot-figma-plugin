@@ -64,7 +64,8 @@ Jot won't manage your process. It just remembers what happened.
 
 - All entries are stored using Figma's plugin data API — they live inside the Figma file
 - No data is sent to external services
-- No network requests are made
+- The only network request loads your Figma profile photo (from `*.figma.com`) for the sticky note avatar. Turn off **Avatar** to skip it
+- Jot reads your Figma name and photo (`currentuser` permission) to sign sticky notes
 
 Anyone with edit access to the file can view, edit, or delete entries. Treat Jot as a working design journal, not an audit log.
 

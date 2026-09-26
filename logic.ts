@@ -37,6 +37,11 @@ export function parseAuthorDisplay(value: unknown): AuthorDisplay {
   };
 }
 
+export type Author = {
+  name?: string;
+  photoUrl?: string;
+};
+
 export type JournalEntry = {
   id: string;
   createdAt: string;
@@ -46,6 +51,9 @@ export type JournalEntry = {
   heading?: string;
   note: string;
   display?: AuthorDisplay;
+  author?: Author;
+  /** Canvas node for a sticky entry. */
+  stickyNodeId?: string;
 
   nodeId?: string;
   nodeName?: string;
@@ -148,4 +156,50 @@ export function cleanNote(raw: unknown): string | null {
 
 export function generateEntryId(): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Sticky layout (pure, no Figma API)
+// ---------------------------------------------------------------------------
+
+export const STICKY_GAP = 24;
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/** "29 September 2025". Manual, so it does not depend on Intl in the plugin sandbox. */
+export function formatStickyDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+export function initials(name?: string): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join("");
+}
+
+export type StickyContent = {
+  tag?: EntryType;
+  heading?: string;
+  note: string;
+  footer: { avatar: boolean; name?: string; date?: string } | null;
+};
+
+export function stickyContent(entry: JournalEntry): StickyContent {
+  const display = parseAuthorDisplay(entry.display);
+  const name = display.name ? entry.author?.name : undefined;
+  const date = display.timestamp ? formatStickyDate(entry.createdAt) || undefined : undefined;
+  const footer = display.avatar || name || date ? { avatar: display.avatar, name, date } : null;
+  return { tag: entry.type, heading: entry.heading, note: entry.note, footer };
+}
+
+export type Box = { x: number; y: number; width: number; height: number };
+
+/** Right of the linked layer, top-aligned. */
+export function stickyPosition(target: Box): { x: number; y: number } {
+  return { x: target.x + target.width + STICKY_GAP, y: target.y };
 }

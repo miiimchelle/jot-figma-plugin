@@ -4,7 +4,18 @@
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "ui.html",
-  "editorType": ["figma", "dev"],
-  "networkAccess": { "allowedDomains": ["none"] },
-  "documentAccess": "dynamic-page"
+  "editorType": [
+    "figma",
+    "dev"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://*.figma.com"
+    ],
+    "reasoning": "Loads your Figma profile photo for the avatar on sticky notes. No entry data is sent."
+  },
+  "documentAccess": "dynamic-page",
+  "permissions": [
+    "currentuser"
+  ]
 }

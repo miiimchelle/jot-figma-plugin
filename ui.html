@@ -744,8 +744,8 @@
         item.className = "item" + (e.nodeId ? " clickable" : "");
         if (e.nodeId) {
           item.setAttribute("tabindex", "0");
-          item.onclick = () => send({ type: "GO_TO_ENTRY", nodeId: e.nodeId });
-          item.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); send({ type: "GO_TO_ENTRY", nodeId: e.nodeId }); } };
+          item.onclick = () => send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId });
+          item.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId }); } };
         }
 
         const kind = e.kind === "annotation" ? "annotation" : "sticky";

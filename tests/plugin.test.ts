@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { STORAGE_KEY, FILE_KEY_STORAGE } from "../logic";
+import { createCanvasMock } from "./canvasMock";
 
 // ---------------------------------------------------------------------------
 // Figma API Mock
@@ -20,12 +21,8 @@ function createFigmaMock() {
     parent: { type: "PAGE", id: "page-1", name: "Page 1" } as any,
   };
 
-  const mockPage = {
-    type: "PAGE",
-    id: "page-1",
-    name: "Page 1",
-    selection: [mockNode] as any[],
-  };
+  const canvas = createCanvasMock();
+  const mockPage = Object.assign(canvas.page, { selection: [mockNode] as any[] });
   mockNode.parent = mockPage;
 
   const figma = {
@@ -49,9 +46,12 @@ function createFigmaMock() {
         clientData[key] = val;
       }),
     },
+    ...canvas.api,
+    editorType: "figma",
+    currentUser: { name: "Michelle Luo", photoUrl: "https://s3-alpha.figma.com/me.png" },
     getNodeByIdAsync: vi.fn(async (id: string) => {
       if (id === mockNode.id) return mockNode;
-      return null;
+      return canvas.nodes.get(id) ?? null;
     }),
     setCurrentPageAsync: vi.fn(async (page: any) => {
       figma.currentPage = page;
@@ -61,7 +61,7 @@ function createFigmaMock() {
     },
   };
 
-  return { figma, pluginData, postMessage, notify, resize, mockNode, mockPage };
+  return { figma, pluginData, postMessage, notify, resize, mockNode, mockPage, canvas };
 }
 
 // ---------------------------------------------------------------------------
@@ -299,6 +299,67 @@ describe("Plugin message handling", () => {
         type: "PREFS",
         display: { avatar: false, name: true, timestamp: false },
       });
+    });
+  });
+
+  describe("Sticky canvas sync", () => {
+    const lastJournal = (postMessage: any) =>
+      postMessage.mock.calls.filter((c: any[]) => c[0].type === "JOURNAL").pop()![0].entries;
+
+    it("ADD_ENTRY stores author and the new sticky id", async () => {
+      const { handler, postMessage, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [e] = lastJournal(postMessage);
+      expect(e.author).toEqual({ name: "Michelle Luo", photoUrl: "https://s3-alpha.figma.com/me.png" });
+      expect(canvas.nodes.get(e.stickyNodeId)?.parent).toBe(canvas.page);
+    });
+
+    it("annotations get no sticky, and changing kind removes it", async () => {
+      const { handler, postMessage, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", kind: "annotation", note: "N" });
+      expect(lastJournal(postMessage)[0].stickyNodeId).toBeUndefined();
+
+      await handler({ type: "ADD_ENTRY", note: "S" });
+      const sticky = lastJournal(postMessage)[0];
+      await handler({ type: "CHANGE_KIND", id: sticky.id, kind: "annotation" });
+      expect(canvas.nodes.has(sticky.stickyNodeId)).toBe(false);
+      expect(lastJournal(postMessage)[0].stickyNodeId).toBeUndefined();
+    });
+
+    it("DELETE_ENTRY removes the sticky", async () => {
+      const { handler, postMessage, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [e] = lastJournal(postMessage);
+      await handler({ type: "DELETE_ENTRY", id: e.id });
+      expect(canvas.nodes.has(e.stickyNodeId)).toBe(false);
+    });
+
+    it("skips canvas in Dev Mode but still saves", async () => {
+      const { handler, postMessage, figma } = await loadPlugin();
+      (figma as any).editorType = "dev";
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      expect(lastJournal(postMessage)[0].stickyNodeId).toBeUndefined();
+      expect(figma.createFrame).not.toHaveBeenCalled();
+    });
+
+    it("reports a drawing failure without losing the entry", async () => {
+      const { handler, postMessage, figma } = await loadPlugin();
+      figma.createFrame.mockImplementation(() => { throw new Error("boom"); });
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      expect(lastJournal(postMessage)).toHaveLength(1);
+      expect(postMessage).toHaveBeenCalledWith({
+        type: "ERROR",
+        message: "Saved, but the sticky note could not be drawn.",
+      });
+    });
+
+    it("GO_TO_ENTRY selects the sticky for sticky entries", async () => {
+      const { handler, postMessage, figma, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [e] = lastJournal(postMessage);
+      await handler({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId });
+      expect(figma.currentPage.selection).toEqual([canvas.nodes.get(e.stickyNodeId)]);
     });
   });
 
