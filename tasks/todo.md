@@ -52,7 +52,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 
 ## Plan
 
-- [ ] 1. Native Figma look: switch UI to Figma theme tokens (light/dark)
+- [x] 1. Native Figma look: switch UI to Figma theme tokens (light/dark)
 - [ ] 2. Data model: `kind` field + migration in `logic.ts`, tests
 - [ ] 3. Add entry tab: kind selector, "Note" label
 - [ ] 4. View entries tab: kind filter, count, badge, Change to buttons, tests
@@ -61,10 +61,10 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 - [ ] 7. Export: grouped by kind, tests
 - [ ] 8. `npm run build`, `npm test`, changelog
 
-## Open questions
+## Decided
 
-- Sticky placement: right of the linked layer, 24px gap? Unlinked entries: no sticky?
-- Annotation label format: tag + note (e.g. "Trade-off: …")?
+- Sticky placement: 24px right of the linked layer. Unlinked entries: no sticky.
+- Annotation text: tag + note (e.g. "Trade-off: …").
 
 ## Review
 

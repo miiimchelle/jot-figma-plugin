@@ -386,6 +386,7 @@ describe("Plugin message handling", () => {
       expect(figma.showUI).toHaveBeenCalledWith("<html></html>", {
         width: 360,
         height: 520,
+        themeColors: true,
       });
     });
 

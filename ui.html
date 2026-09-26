@@ -51,24 +51,41 @@
       --font-size-base: 12px;
       --font-size-lead: 13px;
       --font-size-heading: 14px;
-      /* Semantic tokens */
-      --text-primary: var(--color-gray-900);
-      --text-secondary: var(--color-gray-600);
-      --text-muted: var(--color-gray-500);
-      --text-muted-subtle: #888;
-      --surface-default: var(--color-white);
-      --surface-elevated: var(--color-gray-100);
-      --surface-subtle: #f7f7f7;
-      --surface-subtle-alt: #f9f9fb;
-      --border-default: var(--color-gray-200);
-      --border-subtle: #eee;
-      --border-muted: #ddd;
-      --focus-ring: var(--color-gray-900);
+      /* Semantic tokens: Figma theme vars (themeColors: true), fallbacks for tests */
+      --text-primary: var(--figma-color-text, var(--color-gray-900));
+      --text-secondary: var(--figma-color-text-secondary, var(--color-gray-600));
+      --text-muted: var(--figma-color-text-tertiary, var(--color-gray-500));
+      --text-muted-subtle: var(--figma-color-text-tertiary, #888);
+      --text-on-brand: var(--figma-color-text-onbrand, var(--color-white));
+      --text-on-danger: var(--figma-color-text-ondanger, var(--color-white));
+      --text-success: var(--figma-color-text-success, var(--color-success));
+      --surface-default: var(--figma-color-bg, var(--color-white));
+      --surface-elevated: var(--figma-color-bg-secondary, var(--color-gray-100));
+      --surface-subtle: var(--figma-color-bg-hover, #f7f7f7);
+      --surface-subtle-alt: var(--figma-color-bg-secondary, #f9f9fb);
+      --surface-brand: var(--figma-color-bg-brand, var(--color-gray-900));
+      --surface-brand-hover: var(--figma-color-bg-brand-hover, var(--color-gray-800));
+      --surface-danger: var(--figma-color-bg-danger, #fa8072);
+      --surface-danger-hover: var(--figma-color-bg-danger-hover, #e96b5c);
+      --border-default: var(--figma-color-border, var(--color-gray-200));
+      --border-strong: var(--figma-color-border-strong, var(--color-gray-300));
+      --border-subtle: var(--figma-color-border, #eee);
+      --border-muted: var(--figma-color-border, #ddd);
+      --focus-ring: var(--figma-color-border-selected, var(--color-gray-900));
       --transition-default: 120ms ease;
     }
 
+    /* Figma dark theme: tone down pill primitives */
+    html.figma-dark {
+      --color-pill-decision-bg: #1e2a44; --color-pill-decision-fg: #93c5fd; --color-pill-decision-border: #1d4ed8;
+      --color-pill-assumption-bg: #3a2c12; --color-pill-assumption-fg: #fcd34d; --color-pill-assumption-border: #b45309;
+      --color-pill-tradeoff-bg: #2e2447; --color-pill-tradeoff-fg: #c4b5fd; --color-pill-tradeoff-border: #5b21b6;
+      --color-pill-feedback-bg: #12352a; --color-pill-feedback-fg: #6ee7b7; --color-pill-feedback-border: #047857;
+      --color-pill-debt-bg: #3f1d1d; --color-pill-debt-fg: #fca5a5; --color-pill-debt-border: #b91c1c;
+    }
+
     body {
-      font: var(--font-size-base)/1.4 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+      font: var(--font-size-base)/1.4 Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
       margin: var(--space-5);
       color: var(--text-primary);
       background: var(--surface-default);
@@ -91,12 +108,12 @@
     }
     .settings-btn:hover {
       background: var(--surface-elevated); color: var(--text-primary);
-      border-color: var(--color-gray-300);
+      border-color: var(--border-strong);
     }
     .settings-btn[data-state="active"] {
-      background: var(--color-gray-200); color: var(--text-primary);
-      border-color: var(--color-gray-600);
-      box-shadow: 0 0 0 1px var(--color-gray-600);
+      background: var(--figma-color-bg-selected, var(--color-gray-200)); color: var(--text-primary);
+      border-color: var(--focus-ring);
+      box-shadow: 0 0 0 1px var(--focus-ring);
     }
     .settings-btn:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
@@ -140,12 +157,12 @@
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
     }
     .btn-primary {
-      background: var(--color-gray-900); color: var(--color-white);
-      border-color: var(--color-gray-900);
+      background: var(--surface-brand); color: var(--text-on-brand);
+      border-color: var(--surface-brand);
       font-weight: 600;
     }
     .btn-primary:hover {
-      background: var(--color-gray-800); border-color: var(--color-gray-800);
+      background: var(--surface-brand-hover); border-color: var(--surface-brand-hover);
     }
     textarea {
       width: 100%; height: 90px; resize: vertical; margin-top: var(--space-2);
@@ -168,7 +185,7 @@
       margin-bottom: var(--space-2);
     }
     .error {
-      color: var(--color-destructive); margin-top: var(--space-3);
+      color: var(--figma-color-text-danger, var(--color-destructive)); margin-top: var(--space-3);
       font-size: var(--font-size-caption);
     }
 
@@ -251,10 +268,10 @@
     }
     .action-btn:hover { background: var(--surface-subtle); }
     .action-btn--destructive {
-      background: #fa8072; color: var(--color-white);
-      border-color: #fa8072;
+      background: var(--surface-danger); color: var(--text-on-danger);
+      border-color: var(--surface-danger);
     }
-    .action-btn--destructive:hover { background: #e96b5c; border-color: #e96b5c; }
+    .action-btn--destructive:hover { background: var(--surface-danger-hover); border-color: var(--surface-danger-hover); }
     .action-btn:focus-visible,
     .action-btn--destructive:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
@@ -296,7 +313,7 @@
     .setup-row { display: flex; gap: var(--space-3); margin-top: var(--space-2); }
     .setup-row button { flex: 1; height: 28px; font-size: var(--font-size-caption); margin-top: 0; }
     .setup-status {
-      font-size: var(--font-size-caption); color: var(--color-success);
+      font-size: var(--font-size-caption); color: var(--text-success);
       margin-top: var(--space-2); display: none;
     }
     .setup-hint { font-size: 10px; color: var(--text-muted); margin-top: var(--space-1); }

@@ -9,7 +9,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - —
 
 ### Changed
-- —
+- UI follows Figma's light and dark theme (`themeColors`), Inter font
 
 ### Fixed
 - —

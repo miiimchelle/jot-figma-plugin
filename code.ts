@@ -177,7 +177,7 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
 // Init
 // ---------------------------------------------------------------------------
 
-figma.showUI(__html__, { width: 360, height: 520 });
+figma.showUI(__html__, { width: 360, height: 520, themeColors: true });
 sendFileKey();
 
 figma.ui.onmessage = async (msg) => {
