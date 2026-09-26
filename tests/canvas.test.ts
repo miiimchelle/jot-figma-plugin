@@ -73,6 +73,12 @@ describe("sticky colours and pill", () => {
     expect(mock.texts(sticky).slice(0, 2)).toEqual(["Trade-off", "Colour and typography"]);
   });
 
+  it("shows the pill label in all caps", async () => {
+    const sticky = mock.nodes.get((await syncSticky(entry({ type: "tradeoff" })))!)!;
+    const pillText = sticky.children[0].children[0].children[0].children[0];
+    expect(pillText).toMatchObject({ characters: "Trade-off", textCase: "UPPER" });
+  });
+
   it("has no icon", async () => {
     await syncSticky(entry({ type: "tradeoff" }));
     expect(mock.api.createNodeFromSvg).not.toHaveBeenCalled();

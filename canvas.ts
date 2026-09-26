@@ -108,7 +108,9 @@ function pillNode(family: string, label: string, p: StickyPalette): FrameNode {
   pill.fills = [solid("#FFFFFF")];
   pill.strokes = [solid(p.border)];
   pill.strokeWeight = 1;
-  pill.appendChild(text(family, true, 12, label, p.ink));
+  const t = text(family, true, 12, label, p.ink);
+  t.textCase = "UPPER";
+  pill.appendChild(t);
   return pill;
 }
 
