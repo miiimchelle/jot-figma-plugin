@@ -13,7 +13,6 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Add entry: Sticky/Annotation switch, heading field, avatar/name/timestamp toggles remembered per user
 - View entries: kind filter, "No tag" filter, count split by kind, kind badge, heading, Change to annotation/sticky buttons
 - Sticky notes on canvas: drawn 24px right of the linked layer, rebuilt on edit (keeping a moved position), removed on delete or change to annotation. Avatar falls back to initials
-- Native Figma annotations for Annotation entries: heading, "Tag: note" and name/date on the linked layer. Updated on edit, removed on delete or change to sticky. Other annotations on the layer are left alone
 
 ### Changed
 - Manifest: `currentuser` permission, network access limited to `*.figma.com` (avatar only)

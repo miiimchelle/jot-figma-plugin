@@ -61,7 +61,6 @@ export function createCanvasMock() {
     id: "10:20",
     name: "Test Frame",
     absoluteBoundingBox: { x: 100, y: 50, width: 200, height: 80 },
-    annotations: [],
   });
   page.appendChild(target);
 

@@ -9,7 +9,6 @@ import {
   cleanNote,
   generateEntryId,
   isEntryType,
-  annotationLabel,
   isEntryKind,
   parseTag,
   parseAuthorDisplay,
@@ -477,20 +476,5 @@ describe("sticky layout", () => {
 
   it("places the sticky 24px right of the layer", () => {
     expect(stickyPosition({ x: 10, y: 20, width: 100, height: 50 })).toEqual({ x: 134, y: 20 });
-  });
-});
-
-describe("annotationLabel", () => {
-  const base = { id: "1", createdAt: "2025-09-29T10:00:00Z", kind: "annotation" as const, note: "Use 8px grid." };
-
-  it("joins heading, tag and note, and byline", () => {
-    expect(
-      annotationLabel({ ...base, heading: "Spacing", type: "tradeoff", author: { name: "Ana" } })
-    ).toBe("Spacing\nTrade-off: Use 8px grid.\nAna, 29 September 2025");
-  });
-
-  it("drops empty parts and toggled-off author fields", () => {
-    const display = { avatar: true, name: false, timestamp: false };
-    expect(annotationLabel({ ...base, display, author: { name: "Ana" } })).toBe("Use 8px grid.");
   });
 });

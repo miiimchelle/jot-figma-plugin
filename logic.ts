@@ -54,8 +54,6 @@ export type JournalEntry = {
   author?: Author;
   /** Canvas node for a sticky entry. */
   stickyNodeId?: string;
-  /** Label Jot last wrote to the linked layer's annotations; used to find it again. */
-  annotationText?: string;
 
   nodeId?: string;
   nodeName?: string;
@@ -63,14 +61,6 @@ export type JournalEntry = {
 
   pageId?: string;
   pageName?: string;
-};
-
-export const TAG_LABELS: Record<EntryType, string> = {
-  decision: "Decision",
-  assumption: "Assumption",
-  tradeoff: "Trade-off",
-  feedback: "Feedback",
-  debt: "Design debt",
 };
 
 export const STORAGE_KEY = "jot.journal.v1";
@@ -212,21 +202,4 @@ export type Box = { x: number; y: number; width: number; height: number };
 /** Right of the linked layer, top-aligned. */
 export function stickyPosition(target: Box): { x: number; y: number } {
   return { x: target.x + target.width + STICKY_GAP, y: target.y };
-}
-
-// ---------------------------------------------------------------------------
-// Annotation text (pure, no Figma API)
-// ---------------------------------------------------------------------------
-
-/** Heading, "Tag: note", then "Name, date" per the author toggles. No avatar. */
-export function annotationLabel(entry: JournalEntry): string {
-  const display = parseAuthorDisplay(entry.display);
-  const body = entry.type ? `${TAG_LABELS[entry.type]}: ${entry.note}` : entry.note;
-  const byline = [
-    display.name ? entry.author?.name : undefined,
-    display.timestamp ? formatStickyDate(entry.createdAt) || undefined : undefined,
-  ]
-    .filter(Boolean)
-    .join(", ");
-  return [entry.heading, body, byline].filter(Boolean).join("\n");
 }
