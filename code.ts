@@ -10,7 +10,7 @@ import {
   isEntryType,
 } from "./logic";
 
-figma.notify("Jot v2.0.0 ready");
+figma.notify("Jot v2.0.1 ready");
 
 const post = (msg: object) => figma.ui.postMessage(msg);
 const err = (message: string) => post({ type: "ERROR", message });
