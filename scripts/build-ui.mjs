@@ -3,6 +3,7 @@
 import * as esbuild from "esbuild";
 import { mkdirSync, writeFileSync } from "fs";
 import path from "path";
+import { caseCollisions } from "./css-check.mjs";
 
 const OUT = "dist/ui.html";
 
@@ -20,6 +21,8 @@ const inlineHtml = {
     build.onEnd((result) => {
       if (result.errors.length) return;
       const file = (ext) => result.outputFiles.find((f) => f.path.endsWith(ext))?.text ?? "";
+      const clashes = caseCollisions(file(".css"));
+      if (clashes.length) throw new Error(`CSS class names differ only by case: ${JSON.stringify(clashes)}`);
       // Keep a literal </script> inside the bundle from closing the tag.
       const js = file(".js").replace(/<\/script/gi, "<\\/script");
       const html = `<!doctype html>
@@ -48,7 +51,10 @@ const options = {
   outdir: "dist/ui-build",
   format: "iife",
   target: "es2017",
-  minify: true,
+  // Keep CSS module class names readable: minified ones like ".jo" and ".Jo" clash in quirks mode.
+  minifyWhitespace: true,
+  minifySyntax: true,
+  minifyIdentifiers: false,
   jsx: "automatic",
   jsxImportSource: "preact",
   loader: { ".module.css": "local-css", ".css": "css" },

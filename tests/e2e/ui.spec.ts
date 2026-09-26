@@ -1,6 +1,7 @@
 import { test, expect, Page } from "@playwright/test";
 
 // Loads the built UI (dist/ui.html) in an iframe; run `npm run build` first.
+// UI -> harness messages arrive asynchronously, so outbound checks poll.
 const HARNESS = "/tests/e2e/harness.html";
 
 const outbound = (page: Page) => page.evaluate(() => (window as any).__harnessOutbound as { type: string }[]);
@@ -23,8 +24,9 @@ test.describe("Jot UI e2e", () => {
     await frame.locator("#note").fill("E2E test note");
     await frame.getByText("Save entry").click();
 
-    const add = (await outbound(page)).find((m) => m.type === "ADD_ENTRY") as any;
-    expect(add).toMatchObject({ note: "E2E test note", entryType: "decision" });
+    await expect
+      .poll(async () => (await outbound(page)).find((m) => m.type === "ADD_ENTRY"))
+      .toMatchObject({ note: "E2E test note", entryType: "decision" });
   });
 
   test("Entries shows the journal and exports Markdown", async ({ page }) => {
@@ -39,7 +41,7 @@ test.describe("Jot UI e2e", () => {
     await expect(frame.locator(".pill")).toHaveText("Decision");
 
     await frame.getByText("Export Markdown").click();
-    expect((await outbound(page)).some((m) => m.type === "EXPORT_MD")).toBe(true);
+    await expect.poll(async () => (await outbound(page)).some((m) => m.type === "EXPORT_MD")).toBe(true);
     await sendToUi(page, { type: "EXPORT_MD_RESULT", markdown: "# Jot\nTest export content" });
     await expect(frame.locator("#md")).toHaveValue("# Jot\nTest export content");
     await expect(frame.getByText("Copy to clipboard")).toBeVisible();
@@ -51,7 +53,8 @@ test.describe("Jot UI e2e", () => {
     await frame.locator("#fileUrlInput").fill("https://www.figma.com/design/ABC123/Project");
     await frame.getByText("Save", { exact: true }).click();
 
-    const set = (await outbound(page)).find((m) => m.type === "SET_FILE_KEY") as any;
-    expect(set?.fileKey).toBe("ABC123");
+    await expect
+      .poll(async () => (await outbound(page)).find((m) => m.type === "SET_FILE_KEY"))
+      .toMatchObject({ fileKey: "ABC123" });
   });
 });
