@@ -1,6 +1,6 @@
 {
   "name": "Jot",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "A lightweight design decision journal for Figma",
   "main": "code.js",
   "scripts": {

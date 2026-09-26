@@ -6,6 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- —
+
+### Changed
+- —
+
+### Fixed
+- —
+
+---
+
+## [v2.1.0] - 2026-09-26
+### Added
 - Optional heading and author display options (avatar, name, timestamp) per entry
 - Tags are now optional ("No tag" option)
 - Add entry: heading field, avatar/name/timestamp toggles remembered per user
@@ -21,8 +33,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 - UI follows Figma's light and dark theme (`themeColors`), Inter font
 - Add entry: "Entry type" renamed to "Tag", "Decision note" renamed to "Note"
 
-### Fixed
-- —
+### Removed
+- Annotation entry kind (built, then removed before release). Entries saved with a `kind` field still load as normal notes
 
 ---
 

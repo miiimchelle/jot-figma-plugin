@@ -15,7 +15,7 @@ import {
 } from "./logic";
 import { syncSticky, removeSticky, STICKY_ENTRY_KEY } from "./canvas";
 
-figma.notify("Jot v2.0.1 ready");
+figma.notify("Jot v2.1.0 ready");
 
 const post = (msg: object) => figma.ui.postMessage(msg);
 const err = (message: string) => post({ type: "ERROR", message });
