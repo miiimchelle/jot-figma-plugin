@@ -14,7 +14,7 @@ import {
   PREFS_STORAGE,
   Author,
 } from "./logic";
-import { syncSticky, removeSticky } from "./canvas";
+import { syncSticky, removeSticky, syncAnnotation, removeAnnotation } from "./canvas";
 
 figma.notify("Jot v2.0.1 ready");
 
@@ -90,6 +90,13 @@ async function syncCanvas(entry: JournalEntry) {
   } catch (e) {
     console.error("Jot: sticky sync failed", e);
     err("Saved, but the sticky note could not be drawn.");
+  }
+  try {
+    const annotationText = await syncAnnotation(entry);
+    if (annotationText !== entry.annotationText) patchEntry(entry.id, { annotationText });
+  } catch (e) {
+    console.error("Jot: annotation sync failed", e);
+    err("Saved, but the annotation could not be added to this layer.");
   }
 }
 
@@ -226,6 +233,11 @@ async function handleDeleteEntry(msg: { id: string }) {
       await removeSticky(entry);
     } catch (e) {
       console.error("Jot: sticky removal failed", e);
+    }
+    try {
+      await removeAnnotation(entry);
+    } catch (e) {
+      console.error("Jot: annotation removal failed", e);
     }
   }
 }

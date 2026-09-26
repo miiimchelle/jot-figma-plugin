@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createCanvasMock } from "./canvasMock";
-import { syncSticky, removeSticky, STICKY_ENTRY_KEY } from "../canvas";
+import { syncSticky, removeSticky, syncAnnotation, removeAnnotation, STICKY_ENTRY_KEY } from "../canvas";
 import { JournalEntry } from "../logic";
 
 let mock: ReturnType<typeof createCanvasMock>;
@@ -72,5 +72,37 @@ describe("removeSticky", () => {
     await removeSticky(entry({ stickyNodeId: sticky.id }));
     expect(sticky.removed).toBe(true);
     await expect(removeSticky(entry({ stickyNodeId: "gone" }))).resolves.toBeUndefined();
+  });
+});
+
+describe("syncAnnotation", () => {
+  const ann = (over: Partial<JournalEntry> = {}) =>
+    entry({ kind: "annotation", type: "tradeoff", heading: undefined, display: { avatar: false, name: false, timestamp: false }, ...over });
+
+  it("adds an annotation next to the user's own ones", async () => {
+    mock.target.annotations = [{ label: "Theirs" }];
+    expect(await syncAnnotation(ann())).toBe("Trade-off: Merge collections.");
+    expect(mock.target.annotations).toEqual([{ label: "Theirs" }, { label: "Trade-off: Merge collections." }]);
+  });
+
+  it("updates its own annotation in place, keeping the category", async () => {
+    mock.target.annotations = [{ label: "Trade-off: Merge collections.", categoryId: "c1" }, { label: "Theirs" }];
+    const text = await syncAnnotation(ann({ note: "Edited", annotationText: "Trade-off: Merge collections." }));
+    expect(mock.target.annotations).toEqual([{ label: text, categoryId: "c1" }, { label: "Theirs" }]);
+  });
+
+  it("removes its annotation when changed to sticky or deleted, leaving others", async () => {
+    mock.target.annotations = [{ label: "Theirs" }, { label: "Mine" }];
+    expect(await syncAnnotation(ann({ kind: "sticky", annotationText: "Mine" }))).toBeUndefined();
+    expect(mock.target.annotations).toEqual([{ label: "Theirs" }]);
+    mock.target.annotations = [{ label: "Mine" }];
+    await removeAnnotation(ann({ annotationText: "Mine" }));
+    expect(mock.target.annotations).toEqual([]);
+  });
+
+  it("skips unlinked entries and rejects layers without annotations", async () => {
+    expect(await syncAnnotation(ann({ nodeId: undefined }))).toBeUndefined();
+    delete mock.target.annotations;
+    await expect(syncAnnotation(ann())).rejects.toThrow("cannot hold annotations");
   });
 });

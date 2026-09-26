@@ -57,7 +57,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 - [x] 3. Add entry tab: kind selector, heading, "Note" label, author toggles (remembered)
 - [x] 4. View entries tab: kind filter, count, badge, Change to buttons, tests
 - [x] 5. Canvas sync: sticky note frames (create/update/delete), author options, avatar
-- [ ] 6. Canvas sync: native annotations (create/update/delete)
+- [x] 6. Canvas sync: native annotations (create/update/delete)
 - [ ] 7. Export: grouped by kind, tests
 - [ ] 8. `npm run build`, `npm test`, changelog
 
@@ -65,6 +65,8 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 
 - Sticky placement: 24px right of the linked layer. Unlinked entries: no sticky.
 - Annotation text: tag + note (e.g. "Trade-off: …").
+- Annotations have no id: Jot stores the text it last wrote (`annotationText`) and matches on it. If someone edits that annotation in Figma, Jot adds a new one on the next save.
+- Dev Mode: canvas sync (stickies and annotations) is skipped, same as before.
 
 ## Review
 

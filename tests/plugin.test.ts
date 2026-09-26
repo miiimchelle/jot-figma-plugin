@@ -18,6 +18,7 @@ function createFigmaMock() {
     type: "FRAME",
     x: 0,
     removed: false,
+    annotations: [] as any[],
     parent: { type: "PAGE", id: "page-1", name: "Page 1" } as any,
   };
 
@@ -324,6 +325,21 @@ describe("Plugin message handling", () => {
       await handler({ type: "CHANGE_KIND", id: sticky.id, kind: "annotation" });
       expect(canvas.nodes.has(sticky.stickyNodeId)).toBe(false);
       expect(lastJournal(postMessage)[0].stickyNodeId).toBeUndefined();
+    });
+
+    it("annotation entries write, update and remove a native annotation", async () => {
+      const { handler, postMessage, mockNode } = await loadPlugin();
+      const display = { avatar: false, name: true, timestamp: false };
+      await handler({ type: "ADD_ENTRY", kind: "annotation", entryType: "decision", note: "N", display });
+      const [e] = lastJournal(postMessage);
+      expect(e.annotationText).toBe("Decision: N\nMichelle Luo");
+      expect(mockNode.annotations).toEqual([{ label: e.annotationText }]);
+
+      await handler({ type: "UPDATE_ENTRY", id: e.id, kind: "annotation", note: "M", display });
+      expect(mockNode.annotations).toEqual([{ label: "M\nMichelle Luo" }]);
+
+      await handler({ type: "DELETE_ENTRY", id: e.id });
+      expect(mockNode.annotations).toEqual([]);
     });
 
     it("DELETE_ENTRY removes the sticky", async () => {

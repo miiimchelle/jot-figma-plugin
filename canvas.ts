@@ -1,4 +1,12 @@
-import { JournalEntry, EntryType, stickyContent, stickyPosition, initials, Box } from "./logic";
+import {
+  JournalEntry,
+  EntryType,
+  stickyContent,
+  stickyPosition,
+  initials,
+  Box,
+  annotationLabel,
+} from "./logic";
 
 // ---------------------------------------------------------------------------
 // Sticky note rendering (Figma API). Layout decisions live in logic.ts.
@@ -236,4 +244,51 @@ export async function syncSticky(entry: JournalEntry): Promise<string | undefine
   }
 
   return sticky.id;
+}
+
+// ---------------------------------------------------------------------------
+// Native annotations. They have no id, so Jot finds its own by the text it last wrote.
+// ---------------------------------------------------------------------------
+
+type Annotatable = SceneNode & AnnotationsMixin;
+
+function canAnnotate(node: SceneNode): node is Annotatable {
+  return "annotations" in node;
+}
+
+function findOwn(node: Annotatable, text?: string): number {
+  return text ? node.annotations.findIndex((a) => a.label === text) : -1;
+}
+
+export async function removeAnnotation(entry: JournalEntry): Promise<void> {
+  const target = await liveNode(entry.nodeId);
+  if (!target || !canAnnotate(target)) return;
+  const idx = findOwn(target, entry.annotationText);
+  if (idx >= 0) target.annotations = target.annotations.filter((_, i) => i !== idx);
+}
+
+/**
+ * Add or update the annotation on the linked layer. Returns the text written, or
+ * undefined when the entry is not an annotation or has no linked layer (existing one removed).
+ */
+export async function syncAnnotation(entry: JournalEntry): Promise<string | undefined> {
+  const target = await liveNode(entry.nodeId);
+  if (entry.kind !== "annotation" || !target) {
+    await removeAnnotation(entry);
+    return undefined;
+  }
+  if (!canAnnotate(target)) throw new Error(`${target.type} layers cannot hold annotations`);
+
+  const label = annotationLabel(entry);
+  const next = [...target.annotations];
+  const idx = findOwn(target, entry.annotationText);
+  if (idx >= 0) {
+    // Keep a category the user picked in Figma.
+    const { categoryId, properties } = next[idx];
+    next[idx] = { label, ...(categoryId && { categoryId }), ...(properties && { properties }) };
+  } else {
+    next.push({ label });
+  }
+  target.annotations = next;
+  return label;
 }
