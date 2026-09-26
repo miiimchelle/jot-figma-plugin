@@ -13,7 +13,7 @@ import {
   PREFS_STORAGE,
   Author,
 } from "./logic";
-import { syncSticky, removeSticky } from "./canvas";
+import { syncSticky, removeSticky, STICKY_ENTRY_KEY } from "./canvas";
 
 figma.notify("Jot v2.0.1 ready");
 
@@ -193,6 +193,36 @@ async function handleUpdateEntry(msg: EntryInput & { id: string }) {
   await syncCanvas(entries[idx]);
 }
 
+// Link (or relink) an entry to the current selection and redraw its sticky there.
+async function handleLinkEntry(msg: { id: string }) {
+  const node = figma.currentPage.selection[0];
+  if (!node) { err("Select a layer or frame first."); return; }
+  if (node.getPluginData(STICKY_ENTRY_KEY)) { err("Select a layer or frame, not a Jot sticky."); return; }
+
+  const entries = getJournal();
+  const idx = entries.findIndex((e) => e.id === msg.id);
+  if (idx === -1) { err("Entry not found."); return; }
+
+  // Drop the old sticky so the new one is placed next to the new layer.
+  try {
+    await removeSticky(entries[idx]);
+  } catch (e) {
+    console.error("Jot: sticky removal failed", e);
+  }
+
+  entries[idx] = {
+    ...entries[idx],
+    ...selectionContext(),
+    stickyNodeId: undefined,
+    updatedAt: new Date().toISOString(),
+  };
+
+  setJournal(entries);
+  sendJournal(entries);
+  figma.notify(`Linked to ${node.name}`);
+  await syncCanvas(entries[idx]);
+}
+
 async function handleDeleteEntry(msg: { id: string }) {
   const entries = getJournal();
   const entry = entries.find((e) => e.id === msg.id);
@@ -251,6 +281,7 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   ADD_ENTRY: handleAddEntry,
   UPDATE_ENTRY: handleUpdateEntry,
   DELETE_ENTRY: handleDeleteEntry,
+  LINK_ENTRY: handleLinkEntry,
   GO_TO_ENTRY: handleGoToEntry,
   EXPORT_MD: handleExportMd,
 };

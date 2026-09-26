@@ -809,7 +809,15 @@ describe("UI", () => {
       expect(doc.getElementById("filterKind")).toBeNull();
       expect(doc.querySelector(".kind-badge")).toBeNull();
       const labels = [...doc.querySelectorAll(".action-btn")].map((b) => b.textContent);
-      expect(labels).toEqual(["Edit", "Delete", "Edit", "Delete"]);
+      expect(labels).toEqual(["Edit", "Link to selection", "Delete", "Edit", "Link to selection", "Delete"]);
+    });
+
+    it("sends LINK_ENTRY from Link to selection", () => {
+      journal();
+      messages.length = 0;
+      const btn = [...doc.querySelectorAll(".action-btn")].find((b) => b.textContent === "Link to selection");
+      (btn as HTMLElement).click();
+      expect(messages).toEqual([{ type: "LINK_ENTRY", id: "s1" }]);
     });
 
     it("renders heading and hides empty tag pill", () => {

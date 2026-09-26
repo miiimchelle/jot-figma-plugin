@@ -18,6 +18,7 @@ function createFigmaMock() {
     type: "FRAME",
     x: 0,
     removed: false,
+    getPluginData: (_k: string) => "",
     parent: { type: "PAGE", id: "page-1", name: "Page 1" } as any,
   };
 
@@ -289,6 +290,37 @@ describe("Plugin message handling", () => {
       const [e] = lastJournal(postMessage);
       expect(e.author).toEqual({ name: "Michelle Luo", photoUrl: "https://s3-alpha.figma.com/me.png" });
       expect(canvas.nodes.get(e.stickyNodeId)?.parent).toBe(canvas.page);
+    });
+
+    it("LINK_ENTRY links an unlinked entry to the selection and draws its sticky", async () => {
+      const { handler, postMessage, notify, pluginData, canvas } = await loadPlugin();
+      pluginData[STORAGE_KEY] = JSON.stringify([{ id: "e1", createdAt: "2025-01-01", note: "N" }]);
+      await handler({ type: "LINK_ENTRY", id: "e1" });
+      const [e] = lastJournal(postMessage);
+      expect(e).toMatchObject({ nodeId: "10:20", nodeName: "Test Frame", pageName: "Page 1" });
+      expect(canvas.nodes.get(e.stickyNodeId)?.parent).toBe(canvas.page);
+      expect(notify).toHaveBeenCalledWith("Linked to Test Frame");
+    });
+
+    it("LINK_ENTRY replaces the old sticky when relinking", async () => {
+      const { handler, postMessage, canvas } = await loadPlugin();
+      await handler({ type: "ADD_ENTRY", note: "N" });
+      const [before] = lastJournal(postMessage);
+      await handler({ type: "LINK_ENTRY", id: before.id });
+      const [after] = lastJournal(postMessage);
+      expect(canvas.nodes.has(before.stickyNodeId)).toBe(false);
+      expect(after.stickyNodeId).not.toBe(before.stickyNodeId);
+    });
+
+    it("LINK_ENTRY needs a selection that is not a Jot sticky", async () => {
+      const { handler, postMessage, mockPage } = await loadPlugin();
+      mockPage.selection = [];
+      await handler({ type: "LINK_ENTRY", id: "e1" });
+      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Select a layer or frame first." });
+
+      mockPage.selection = [{ id: "1:1", name: "Jot sticky", getPluginData: () => "e1" }];
+      await handler({ type: "LINK_ENTRY", id: "e1" });
+      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Select a layer or frame, not a Jot sticky." });
     });
 
     it("DELETE_ENTRY removes the sticky", async () => {

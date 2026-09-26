@@ -11,6 +11,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Add entry: heading field, avatar/name/timestamp toggles remembered per user
 - View entries: "No tag" filter, heading shown on cards
 - Colour coding by tag on canvas stickies (Decision blue, Assumption amber, Trade-off purple, Feedback green, Design debt red), with a tag pill above the heading. Untagged stays yellow. No icon
+- View entries: "Link to selection" button links or relinks a note to the selected layer or frame and redraws its sticky there
 - Pills show readable labels ("Trade-off", "Design debt")
 - Sticky notes on canvas: every entry with a linked layer gets one, drawn 24px right of the layer, rebuilt on edit (keeping a moved position), removed on delete. Avatar falls back to initials
 

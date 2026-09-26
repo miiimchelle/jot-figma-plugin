@@ -709,6 +709,12 @@
         editBtn.textContent = "Edit";
         editBtn.onclick = (ev) => { ev.stopPropagation(); setError(""); enterEditMode(e); };
 
+        const linkBtn = document.createElement("button");
+        linkBtn.className = "action-btn";
+        linkBtn.textContent = "Link to selection";
+        linkBtn.title = "Link this note to the layer or frame selected in Figma";
+        linkBtn.onclick = (ev) => { ev.stopPropagation(); setError(""); send({ type: "LINK_ENTRY", id: e.id }); };
+
         const delBtn = document.createElement("button");
         delBtn.className = "action-btn action-btn--destructive";
         delBtn.textContent = "Delete";
@@ -719,6 +725,7 @@
         };
 
         actions.appendChild(editBtn);
+        actions.appendChild(linkBtn);
         actions.appendChild(delBtn);
         list.appendChild(item);
       }
