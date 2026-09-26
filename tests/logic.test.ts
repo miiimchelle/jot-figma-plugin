@@ -15,6 +15,7 @@ import {
   formatStickyDate,
   initials,
   stickyContent,
+  stackYs,
   hexToRgb,
   TAG_PALETTES,
   UNTAGGED_PALETTE,
@@ -462,6 +463,11 @@ describe("sticky layout", () => {
 
   it("converts hex to Figma RGB", () => {
     expect(hexToRgb("#FF8000")).toEqual({ r: 1, g: 128 / 255, b: 0 });
+  });
+
+  it("stacks y positions 16px apart", () => {
+    expect(stackYs(50, [100, 40, 10])).toEqual([50, 166, 222]);
+    expect(stackYs(0, [])).toEqual([]);
   });
 
   it("places the sticky 24px right of the layer", () => {

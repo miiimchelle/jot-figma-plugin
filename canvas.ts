@@ -6,6 +6,8 @@ import {
   Box,
   StickyPalette,
   hexToRgb,
+  stackYs,
+  STICKY_STACK_GAP,
 } from "./logic";
 
 // ---------------------------------------------------------------------------
@@ -13,6 +15,8 @@ import {
 // ---------------------------------------------------------------------------
 
 export const STICKY_ENTRY_KEY = "jot.entryId";
+/** Linked layer id, so stickies for the same layer can be stacked. */
+export const STICKY_TARGET_KEY = "jot.targetId";
 
 const WIDTH = 300;
 const PAD = 20;
@@ -134,6 +138,7 @@ export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
     },
   ];
   root.setPluginData(STICKY_ENTRY_KEY, entry.id);
+  root.setPluginData(STICKY_TARGET_KEY, entry.nodeId ?? "");
 
   // Body: pill, heading, note
   const body = autoFrame("Body", "HORIZONTAL");
@@ -203,9 +208,29 @@ async function liveNode(id?: string): Promise<SceneNode | null> {
   return node as SceneNode;
 }
 
+/** Stickies for a layer that still sit in its column (not moved away), top to bottom. */
+function columnStickies(target: SceneNode): SceneNode[] {
+  const page = pageOf(target);
+  if (!page) return [];
+  const x = stickyPosition(boxOf(target)).x;
+  return page.children
+    .filter((n) => n.getPluginData(STICKY_TARGET_KEY) === target.id && Math.abs(n.x - x) < 1)
+    .sort((a, b) => a.y - b.y);
+}
+
+/** Close gaps and overlaps in a layer's sticky column. */
+function restack(target: SceneNode) {
+  const column = columnStickies(target);
+  const ys = stackYs(boxOf(target).y, column.map((n) => n.height));
+  column.forEach((n, i) => (n.y = ys[i]));
+}
+
 export async function removeSticky(entry: JournalEntry): Promise<void> {
   const node = await liveNode(entry.stickyNodeId);
-  if (node) node.remove();
+  if (!node) return;
+  node.remove();
+  const target = await liveNode(entry.nodeId);
+  if (target) restack(target);
 }
 
 /**
@@ -234,12 +259,15 @@ export async function syncSticky(entry: JournalEntry): Promise<string | undefine
     }
     existing.remove();
   } else {
+    // New stickies go to the bottom of the layer's column.
+    const last = columnStickies(target).pop();
     const page = pageOf(target);
     if (page) page.appendChild(sticky);
     const pos = stickyPosition(boxOf(target));
     sticky.x = pos.x;
-    sticky.y = pos.y;
+    sticky.y = last ? last.y + last.height + STICKY_STACK_GAP : pos.y;
   }
 
+  restack(target);
   return sticky.id;
 }

@@ -85,6 +85,41 @@ describe("sticky colours and pill", () => {
   });
 });
 
+describe("stacking stickies on one layer", () => {
+  const add = async (id: string) => mock.nodes.get((await syncSticky(entry({ id })))!)!;
+
+  it("stacks new stickies below each other, 16px apart", async () => {
+    const [a, b, c] = [await add("e1"), await add("e2"), await add("e3")];
+    expect([a, b, c].map((s) => ({ x: s.x, y: s.y }))).toEqual([
+      { x: 324, y: 50 },
+      { x: 324, y: 166 },
+      { x: 324, y: 282 },
+    ]);
+  });
+
+  it("closes the gap when a sticky is removed", async () => {
+    const [a, b, c] = [await add("e1"), await add("e2"), await add("e3")];
+    await removeSticky(entry({ id: "e2", stickyNodeId: b.id }));
+    expect([a.y, c.y]).toEqual([50, 166]);
+  });
+
+  it("leaves a sticky the user moved out of the column alone", async () => {
+    const a = await add("e1");
+    a.x = 900;
+    a.y = 700;
+    const b = await add("e2");
+    expect({ x: b.x, y: b.y }).toEqual({ x: 324, y: 50 });
+    expect({ x: a.x, y: a.y }).toEqual({ x: 900, y: 700 });
+  });
+
+  it("pushes lower stickies down when one gets taller", async () => {
+    const [a, b] = [await add("e1"), await add("e2")];
+    a.height = 300;
+    await removeSticky(entry({ id: "none", stickyNodeId: (await add("e3")).id }));
+    expect(b.y).toBe(366);
+  });
+});
+
 describe("removeSticky", () => {
   it("removes the sticky and ignores missing ones", async () => {
     const sticky = mock.nodes.get((await syncSticky(entry()))!)!;

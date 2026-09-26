@@ -12,6 +12,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - View entries: "No tag" filter, heading shown on cards
 - Colour coding by tag on canvas stickies (Decision blue, Assumption amber, Trade-off purple, Feedback green, Design debt red), with a tag pill above the heading. Untagged stays yellow. No icon
 - View entries: unlinked notes get "Link to selection"; linked notes get "Change link" (moves the note and its sticky to the selected layer) and "Unlink" (removes the link and sticky, keeps the note)
+- Several notes on one layer: their stickies stack in a column to the right of the layer, 16px apart, re-stacked on add, edit, link, unlink and delete. Stickies moved out of the column are left alone
 - Pills show readable labels ("Trade-off", "Design debt")
 - Sticky notes on canvas: every entry with a linked layer gets one, drawn 24px right of the layer, rebuilt on edit (keeping a moved position), removed on delete. Avatar falls back to initials
 

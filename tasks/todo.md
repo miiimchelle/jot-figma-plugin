@@ -65,6 +65,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 ## Decided
 
 - Sticky placement: 24px right of the linked layer. Unlinked entries: no sticky.
+- Several notes on one layer: stickies stack top to bottom, 16px apart, in the column 24px right of the layer. Stickies record their layer (`jot.targetId`). Moved-away stickies are ignored when stacking.
 - Annotation text: tag + note (e.g. "Trade-off: …").
 
 ## Review

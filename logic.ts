@@ -143,6 +143,8 @@ export function generateEntryId(): string {
 // ---------------------------------------------------------------------------
 
 export const STICKY_GAP = 24;
+/** Vertical gap between stickies linked to the same layer. */
+export const STICKY_STACK_GAP = 16;
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -224,4 +226,15 @@ export type Box = { x: number; y: number; width: number; height: number };
 /** Right of the linked layer, top-aligned. */
 export function stickyPosition(target: Box): { x: number; y: number } {
   return { x: target.x + target.width + STICKY_GAP, y: target.y };
+}
+
+/** Y positions for stickies stacked top to bottom from `top`, 16px apart. */
+export function stackYs(top: number, heights: number[]): number[] {
+  const ys: number[] = [];
+  let y = top;
+  for (const h of heights) {
+    ys.push(y);
+    y += h + STICKY_STACK_GAP;
+  }
+  return ys;
 }
