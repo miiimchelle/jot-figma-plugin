@@ -11,6 +11,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - `CHANGE_KIND` message to switch an entry between Sticky and Annotation
 - Tags are now optional ("No tag" option)
 - Add entry: Sticky/Annotation switch, heading field, avatar/name/timestamp toggles remembered per user
+- View entries: kind filter, "No tag" filter, count split by kind, kind badge, heading, Change to annotation/sticky buttons
 
 ### Changed
 - UI follows Figma's light and dark theme (`themeColors`), Inter font

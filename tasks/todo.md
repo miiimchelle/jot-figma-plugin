@@ -47,7 +47,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 - Filters: kind dropdown (All kinds / Stickies / Annotations) next to the tag dropdown.
 - Count split by kind.
 - Card: kind badge. Actions: Sticky = Edit, Change to annotation, Delete. Annotation = Edit, Change to sticky, Delete.
-- Clicking a Sticky card selects the sticky on canvas. Clicking an Annotation card selects the layer.
+- Clicking a Sticky card selects the sticky on canvas (after step 5; until then, the layer). Clicking an Annotation card selects the layer.
 - Markdown export: "Annotations (handover)" section first, then "Stickies (WIP)".
 
 ## Plan
@@ -55,7 +55,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 - [x] 1. Native Figma look: switch UI to Figma theme tokens (light/dark)
 - [x] 2. Data model: `kind` field + migration in `logic.ts`, tests
 - [x] 3. Add entry tab: kind selector, heading, "Note" label, author toggles (remembered)
-- [ ] 4. View entries tab: kind filter, count, badge, Change to buttons, tests
+- [x] 4. View entries tab: kind filter, count, badge, Change to buttons, tests
 - [ ] 5. Canvas sync: sticky note frames (create/update/delete), author options, avatar
 - [ ] 6. Canvas sync: native annotations (create/update/delete)
 - [ ] 7. Export: grouped by kind, tests

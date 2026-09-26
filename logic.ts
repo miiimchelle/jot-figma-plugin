@@ -131,7 +131,7 @@ export function filterEntries(
 ): JournalEntry[] {
   return entries.filter(
     (e) =>
-      (filterType === "all" || e.type === filterType) &&
+      (filterType === "all" || (filterType === "none" ? !e.type : e.type === filterType)) &&
       (filterKind === "all" || e.kind === filterKind)
   );
 }

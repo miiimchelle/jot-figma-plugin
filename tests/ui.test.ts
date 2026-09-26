@@ -307,7 +307,7 @@ describe("UI", () => {
       });
 
       const count = doc.getElementById("entryCount");
-      expect(count?.textContent).toBe("2 entries");
+      expect(count?.textContent).toBe("2 stickies · 0 annotations");
     });
 
     it("shows singular entry count for 1 entry", () => {
@@ -321,7 +321,7 @@ describe("UI", () => {
       });
 
       const count = doc.getElementById("entryCount");
-      expect(count?.textContent).toBe("1 entry");
+      expect(count?.textContent).toBe("1 sticky · 0 annotations");
     });
 
     it("updates tab count badge", () => {
@@ -486,7 +486,7 @@ describe("UI", () => {
       });
 
       const buttons = doc.querySelectorAll(".action-btn");
-      const deleteBtn = buttons[1] as HTMLElement;
+      const deleteBtn = doc.querySelector(".action-btn--destructive") as HTMLElement;
       messages.length = 0;
       deleteBtn.click();
 
@@ -506,7 +506,7 @@ describe("UI", () => {
       });
 
       const buttons = doc.querySelectorAll(".action-btn");
-      const deleteBtn = buttons[1] as HTMLElement;
+      const deleteBtn = doc.querySelector(".action-btn--destructive") as HTMLElement;
       messages.length = 0;
       deleteBtn.click();
 
@@ -795,6 +795,65 @@ describe("UI", () => {
     it("sends GET_FILE_KEY on load", () => {
       const keyMsg = messages.find((m) => m?.type === "GET_FILE_KEY");
       expect(keyMsg).toBeDefined();
+    });
+  });
+
+  describe("View entries: kinds", () => {
+    const journal = () =>
+      simulatePluginMessage(win, {
+        type: "JOURNAL",
+        entries: [
+          { id: "s1", createdAt: "2025-01-01", kind: "sticky", type: "debt", note: "A" },
+          { id: "a1", createdAt: "2025-01-02", kind: "annotation", heading: "Head", note: "B" },
+          { id: "s2", createdAt: "2025-01-03", note: "C" },
+        ],
+      });
+    const ids = () => [...doc.querySelectorAll(".item-note")].map((n) => n.textContent);
+    const filter = (id: string, value: string) => {
+      const sel = doc.getElementById(id) as HTMLSelectElement;
+      sel.value = value;
+      sel.dispatchEvent(new win.Event("change"));
+    };
+
+    it("shows count split by kind", () => {
+      journal();
+      expect(doc.getElementById("entryCount")?.textContent).toBe("2 stickies · 1 annotation");
+    });
+
+    it("filters by kind, treating missing kind as sticky", () => {
+      journal();
+      filter("filterKind", "sticky");
+      expect(ids()).toEqual(["A", "C"]);
+      expect(doc.getElementById("entryCount")?.textContent).toBe("2 of 3 entries");
+    });
+
+    it("filters by 'No tag' combined with kind", () => {
+      journal();
+      filter("filterType", "none");
+      filter("filterKind", "annotation");
+      expect(ids()).toEqual(["B"]);
+    });
+
+    it("renders kind badge, heading and hides empty tag pill", () => {
+      journal();
+      const items = doc.querySelectorAll(".item");
+      expect(items[1].querySelector(".kind-badge")?.textContent).toBe("Annotation");
+      expect(items[1].querySelector(".item-heading")?.textContent).toBe("Head");
+      expect(items[1].querySelector(".pill")).toBeNull();
+      expect(items[0].querySelector(".pill")?.textContent).toBe("debt");
+    });
+
+    it("sends CHANGE_KIND from the Change to buttons", () => {
+      journal();
+      const btns = [...doc.querySelectorAll(".action-btn")].filter((b) => b.textContent?.startsWith("Change to"));
+      expect(btns.map((b) => b.textContent)).toEqual([
+        "Change to annotation",
+        "Change to sticky",
+        "Change to annotation",
+      ]);
+      messages.length = 0;
+      (btns[1] as HTMLElement).click();
+      expect(messages).toContainEqual({ type: "CHANGE_KIND", id: "a1", kind: "sticky" });
     });
   });
 });

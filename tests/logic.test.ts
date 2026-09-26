@@ -217,6 +217,8 @@ describe("filterEntries", () => {
     ] as JournalEntry[];
     expect(filterEntries(mixed, "all", "annotation").map((e) => e.id)).toEqual(["1"]);
     expect(filterEntries(mixed, "decision", "sticky").map((e) => e.id)).toEqual(["3"]);
+    const untagged = { id: "5", createdAt: "x", kind: "sticky", note: "n" } as JournalEntry;
+    expect(filterEntries([...mixed, untagged], "none").map((e) => e.id)).toEqual(["5"]);
   });
 
   it("filters by decision", () => {

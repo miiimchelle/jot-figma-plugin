@@ -32,6 +32,12 @@
       --color-pill-debt-bg: #fee2e2;
       --color-pill-debt-fg: #b91c1c;
       --color-pill-debt-border: #fca5a5;
+      --color-kind-sticky-bg: #fdf1c9;
+      --color-kind-sticky-fg: #4a2511;
+      --color-kind-sticky-border: #e9d18a;
+      --color-kind-annotation-bg: #ece7ff;
+      --color-kind-annotation-fg: #4b2fb3;
+      --color-kind-annotation-border: #c6b8ff;
       --color-destructive: #b00020;
       --color-success: #22c55e;
       /* Primitive – spacing */
@@ -82,6 +88,8 @@
       --color-pill-tradeoff-bg: #2e2447; --color-pill-tradeoff-fg: #c4b5fd; --color-pill-tradeoff-border: #5b21b6;
       --color-pill-feedback-bg: #12352a; --color-pill-feedback-fg: #6ee7b7; --color-pill-feedback-border: #047857;
       --color-pill-debt-bg: #3f1d1d; --color-pill-debt-fg: #fca5a5; --color-pill-debt-border: #b91c1c;
+      --color-kind-sticky-bg: #3a3014; --color-kind-sticky-fg: #fde68a; --color-kind-sticky-border: #8a6d1f;
+      --color-kind-annotation-bg: #2a2150; --color-kind-annotation-fg: #c6b8ff; --color-kind-annotation-border: #5b43c9;
     }
 
     body {
@@ -222,6 +230,23 @@
       border: 1px solid var(--border-muted); border-radius: var(--radius-full);
       font-size: var(--font-size-caption); margin-right: var(--space-2);
     }
+    .kind-badge {
+      display: inline-block; padding: 2px var(--space-2); margin-right: var(--space-2);
+      border: 1px solid; border-radius: var(--radius-sm);
+      font-size: var(--font-size-caption); font-weight: 600;
+    }
+    .kind-badge--sticky {
+      background: var(--color-kind-sticky-bg); color: var(--color-kind-sticky-fg);
+      border-color: var(--color-kind-sticky-border);
+    }
+    .kind-badge--annotation {
+      background: var(--color-kind-annotation-bg); color: var(--color-kind-annotation-fg);
+      border-color: var(--color-kind-annotation-border);
+    }
+    .item-heading {
+      font-size: var(--font-size-lead); font-weight: 600; line-height: 1.3; margin-bottom: var(--space-1);
+    }
+    .item-heading + .item-note { font-size: var(--font-size-base); font-weight: 400; color: var(--text-secondary); }
     .pill--decision {
       background-color: var(--color-pill-decision-bg);
       color: var(--color-pill-decision-fg);
@@ -430,13 +455,19 @@
   <div id="panelView" class="panel">
     <div class="filter-row">
       <span class="filter-label">Filter:</span>
-      <select id="filterType">
-        <option value="all">All types</option>
+      <select id="filterKind" aria-label="Filter by kind">
+        <option value="all">All kinds</option>
+        <option value="sticky">Stickies</option>
+        <option value="annotation">Annotations</option>
+      </select>
+      <select id="filterType" aria-label="Filter by tag">
+        <option value="all">All tags</option>
         <option value="decision">Decision</option>
         <option value="assumption">Assumption</option>
         <option value="tradeoff">Trade-off</option>
         <option value="feedback">Feedback outcome</option>
         <option value="debt">Design debt</option>
+        <option value="none">No tag</option>
       </select>
     </div>
     <div id="entryCount" class="entry-count"></div>
@@ -596,10 +627,24 @@
 
     // --- Filter ---
     $("filterType").onchange = () => render(currentEntries);
+    $("filterKind").onchange = () => render(currentEntries);
 
+    // Kept in sync with logic.ts filterEntries().
     function getFilteredEntries(entries) {
-      const f = $("filterType").value;
-      return f === "all" ? entries : entries.filter((e) => e.type === f);
+      const t = $("filterType").value;
+      const k = $("filterKind").value;
+      return entries.filter((e) =>
+        (t === "all" || (t === "none" ? !e.type : e.type === t)) &&
+        (k === "all" || (e.kind || "sticky") === k));
+    }
+
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+    function countLabel(all, filtered) {
+      const filtering = $("filterType").value !== "all" || $("filterKind").value !== "all";
+      if (filtering) return `${filtered.length} of ${plural(all.length, "entry", "entries")}`;
+      const stickies = all.filter((e) => (e.kind || "sticky") === "sticky").length;
+      return `${plural(stickies, "sticky", "stickies")} · ${plural(all.length - stickies, "annotation", "annotations")}`;
     }
 
     // --- Edit mode ---
@@ -608,6 +653,7 @@
       sticky: "Work in progress. Shows as a sticky note next to the layer.",
       annotation: "For handover. Shows as a Figma annotation in Dev Mode.",
     };
+    const KIND_LABEL = { sticky: "Sticky", annotation: "Annotation" };
     let currentKind = "sticky";
 
     function setKind(kind) {
@@ -674,9 +720,7 @@
       $("tabCount").textContent = currentEntries.length ? `(${currentEntries.length})` : "";
 
       if (currentEntries.length) {
-        $("entryCount").textContent = $("filterType").value === "all"
-          ? `${currentEntries.length} ${currentEntries.length === 1 ? "entry" : "entries"}`
-          : `${filtered.length} of ${currentEntries.length} entries`;
+        $("entryCount").textContent = countLabel(currentEntries, filtered);
       } else {
         $("entryCount").textContent = "";
       }
@@ -704,13 +748,15 @@
           item.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); send({ type: "GO_TO_ENTRY", nodeId: e.nodeId }); } };
         }
 
+        const kind = e.kind === "annotation" ? "annotation" : "sticky";
         const linked = e.pageName && e.nodeName
           ? `${e.pageName} → ${e.nodeName}`
           : e.pageName || "(not linked)";
 
         item.innerHTML = `
-          <div class="meta"><span class="pill pill--${escapeHtml(e.type)}">${escapeHtml(e.type)}</span> ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
+          <div class="meta"><span class="kind-badge kind-badge--${kind}">${KIND_LABEL[kind]}</span>${e.type ? `<span class="pill pill--${escapeHtml(e.type)}">${escapeHtml(e.type)}</span>` : ""} ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
           <div class="linked">Linked to: ${escapeHtml(linked)}</div>
+          ${e.heading ? `<div class="item-heading">${escapeHtml(e.heading)}</div>` : ""}
           <div class="item-note">${escapeHtml(e.note)}</div>
           <div class="actions"></div>`;
 
@@ -730,7 +776,18 @@
           if (confirm("Delete this entry?")) send({ type: "DELETE_ENTRY", id: e.id });
         };
 
+        const other = kind === "sticky" ? "annotation" : "sticky";
+        const changeBtn = document.createElement("button");
+        changeBtn.className = "action-btn";
+        changeBtn.textContent = `Change to ${other}`;
+        changeBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          setError("");
+          send({ type: "CHANGE_KIND", id: e.id, kind: other });
+        };
+
         actions.appendChild(editBtn);
+        actions.appendChild(changeBtn);
         actions.appendChild(delBtn);
         list.appendChild(item);
       }
