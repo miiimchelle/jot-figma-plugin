@@ -9,10 +9,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Entry kinds: Sticky and Annotation (existing entries migrate to Sticky)
 - Optional heading and author display options (avatar, name, timestamp) per entry
 - `CHANGE_KIND` message to switch an entry between Sticky and Annotation
-- Tags are now optional
+- Tags are now optional ("No tag" option)
+- Add entry: Sticky/Annotation switch, heading field, avatar/name/timestamp toggles remembered per user
 
 ### Changed
 - UI follows Figma's light and dark theme (`themeColors`), Inter font
+- Add entry: "Entry type" renamed to "Tag", "Decision note" renamed to "Note"
 
 ### Fixed
 - —

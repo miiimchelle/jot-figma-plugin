@@ -11,6 +11,7 @@ import {
   parseTag,
   cleanHeading,
   parseAuthorDisplay,
+  PREFS_STORAGE,
 } from "./logic";
 
 figma.notify("Jot v2.0.0 ready");
@@ -84,6 +85,16 @@ function handleSetFileKey(msg: { fileKey: string }) {
   figma.root.setPluginData(FILE_KEY_STORAGE, msg.fileKey);
   figma.notify("File key saved");
   post({ type: "FILE_KEY", fileKey: msg.fileKey });
+}
+
+// Author display toggles are a per-user preference, not per-file.
+async function handleGetPrefs() {
+  const stored = await figma.clientStorage.getAsync(PREFS_STORAGE);
+  post({ type: "PREFS", display: parseAuthorDisplay(stored?.display) });
+}
+
+async function handleSetPrefs(msg: { display: unknown }) {
+  await figma.clientStorage.setAsync(PREFS_STORAGE, { display: parseAuthorDisplay(msg.display) });
 }
 
 function handleResize(msg: { width: number; height: number }) {
@@ -204,6 +215,8 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   GET_FILE_KEY: handleGetFileKey,
   SET_FILE_KEY: handleSetFileKey,
   RESIZE: handleResize,
+  GET_PREFS: handleGetPrefs,
+  SET_PREFS: handleSetPrefs,
   ADD_ENTRY: handleAddEntry,
   UPDATE_ENTRY: handleUpdateEntry,
   DELETE_ENTRY: handleDeleteEntry,

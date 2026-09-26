@@ -127,7 +127,7 @@
       border-radius: var(--radius-lg); padding: var(--space-1);
       background: var(--surface-elevated); box-sizing: border-box;
     }
-    .tabs-trigger {
+    .tabs-trigger, .seg-trigger {
       flex: 1; height: 28px; border: 0; border-radius: var(--radius-md);
       background: transparent;
       cursor: pointer; font-size: var(--font-size-base); font-weight: 600;
@@ -135,11 +135,11 @@
       margin-top: 0; width: 100%;
       transition: background var(--transition-default), box-shadow var(--transition-default), color var(--transition-default);
     }
-    .tabs-trigger[data-state="active"] {
+    .tabs-trigger[data-state="active"], .seg-trigger[data-state="active"] {
       background: var(--surface-default); color: var(--text-primary);
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
-    .tabs-trigger:focus-visible {
+    .tabs-trigger:focus-visible, .seg-trigger:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
     }
 
@@ -300,6 +300,20 @@
       background: var(--surface-subtle-alt); border: 1px solid var(--border-default);
       border-radius: var(--radius-md); padding: var(--space-4); margin-top: var(--space-4);
     }
+    .kind-list { margin-top: var(--space-2); }
+    .text-input {
+      width: 100%; height: 28px; box-sizing: border-box; margin-top: var(--space-2);
+      font-size: var(--font-size-base); padding: 0 var(--space-3);
+      border: 1px solid var(--border-muted); border-radius: var(--radius-sm);
+      background: var(--surface-default); color: var(--text-primary);
+    }
+    .text-input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .toggle-row { display: flex; gap: var(--space-4); margin: var(--space-3) 0 var(--space-2); flex-wrap: wrap; }
+    .toggle-row label {
+      display: flex; align-items: center; gap: var(--space-1);
+      font-size: var(--font-size-caption); color: var(--text-secondary); cursor: pointer;
+    }
+    .toggle-row input { margin: 0; accent-color: var(--surface-brand); }
     .setup-box input {
       width: 100%; height: 28px; box-sizing: border-box; margin-top: var(--space-2);
       font-size: var(--font-size-caption); padding: 0 var(--space-3);
@@ -375,7 +389,14 @@
 
   <!-- WRITE -->
   <div id="panelWrite" class="panel active">
-    <div class="label" > <strong>Entry type</strong></div>
+    <div class="label"><strong>Kind</strong></div>
+    <div id="kind" class="tabs-list kind-list" role="radiogroup" aria-label="Entry kind">
+      <button type="button" class="seg-trigger" role="radio" data-kind="sticky" data-state="active" aria-checked="true">Sticky</button>
+      <button type="button" class="seg-trigger" role="radio" data-kind="annotation" data-state="inactive" aria-checked="false">Annotation</button>
+    </div>
+    <div id="kindHelper" class="helper"></div>
+
+    <div class="label" > <strong>Tag</strong></div>
     <div class="helper">What kind of thinking are you capturing?</div>
     <select id="type">
       <option value="decision">Decision</option>
@@ -383,11 +404,21 @@
       <option value="tradeoff">Trade-off</option>
       <option value="feedback">Feedback outcome</option>
       <option value="debt">Design debt</option>
+      <option value="">No tag</option>
     </select>
 
-    <div class="label"><strong>Decision note</strong></div>
-    <div class="helper">Capture the why, trade-offs, or context behind this decision.</div>
+    <div class="label"><strong>Heading</strong> (optional)</div>
+    <input id="heading" class="text-input" type="text" placeholder="e.g. Colour and typography" />
+
+    <div class="label"><strong>Note</strong></div>
+    <div class="helper">Capture the why, trade-offs, or context behind this.</div>
     <textarea id="note" placeholder="e.g. We chose X over Y because…"></textarea>
+
+    <div class="toggle-row" role="group" aria-label="Show author details">
+      <label><input id="showAvatar" type="checkbox" checked /> Avatar</label>
+      <label><input id="showName" type="checkbox" checked /> Name</label>
+      <label><input id="showTimestamp" type="checkbox" checked /> Timestamp</label>
+    </div>
 
     <button id="save" class="btn-primary">Save entry</button>
     <button id="cancelEdit" style="display:none;">Cancel edit</button>
@@ -570,10 +601,55 @@
     }
 
     // --- Edit mode ---
+    // --- Kind + author display ---
+    const KIND_HELP = {
+      sticky: "Work in progress. Shows as a sticky note next to the layer.",
+      annotation: "For handover. Shows as a Figma annotation in Dev Mode.",
+    };
+    let currentKind = "sticky";
+
+    function setKind(kind) {
+      currentKind = kind;
+      for (const btn of document.querySelectorAll("#kind [data-kind]")) {
+        const active = btn.dataset.kind === kind;
+        btn.dataset.state = active ? "active" : "inactive";
+        btn.setAttribute("aria-checked", String(active));
+      }
+      $("kindHelper").textContent = KIND_HELP[kind];
+    }
+    for (const btn of document.querySelectorAll("#kind [data-kind]")) {
+      btn.onclick = () => setKind(btn.dataset.kind);
+    }
+    setKind("sticky");
+
+    const DISPLAY_IDS = { avatar: "showAvatar", name: "showName", timestamp: "showTimestamp" };
+
+    function getDisplay() {
+      const d = {};
+      for (const [k, id] of Object.entries(DISPLAY_IDS)) d[k] = $(id).checked;
+      return d;
+    }
+    function setDisplay(display) {
+      for (const [k, id] of Object.entries(DISPLAY_IDS)) {
+        if (typeof display?.[k] === "boolean") $(id).checked = display[k];
+      }
+    }
+    for (const id of Object.values(DISPLAY_IDS)) {
+      $(id).onchange = () => { if (!editingId) send({ type: "SET_PREFS", display: getDisplay() }); };
+    }
+
+    function resetForm() {
+      $("heading").value = "";
+      $("note").value = "";
+    }
+
     function enterEditMode(entry) {
       editingId = entry.id;
-      $("type").value = entry.type;
+      setKind(entry.kind || "sticky");
+      $("type").value = entry.type || "";
+      $("heading").value = entry.heading || "";
       $("note").value = entry.note;
+      if (entry.display) setDisplay(entry.display);
       $("save").textContent = "Update entry";
       $("cancelEdit").style.display = "block";
       $("note").focus();
@@ -661,11 +737,17 @@
     }
 
     // --- Actions ---
-    $("cancelEdit").onclick = () => { exitEditMode(); $("note").value = ""; setError(""); };
+    $("cancelEdit").onclick = () => { exitEditMode(); resetForm(); setError(""); send({ type: "GET_PREFS" }); };
 
     $("save").onclick = () => {
       setError("");
-      const payload = { entryType: $("type").value, note: $("note").value };
+      const payload = {
+        kind: currentKind,
+        entryType: $("type").value,
+        heading: $("heading").value,
+        note: $("note").value,
+        display: getDisplay(),
+      };
       send(editingId ? { type: "UPDATE_ENTRY", id: editingId, ...payload } : { type: "ADD_ENTRY", ...payload });
     };
 
@@ -703,10 +785,15 @@
 
       if (msg.type === "JOURNAL") {
         exitEditMode();
-        $("note").value = "";
+        resetForm();
         $("md").style.display = "none";
         $("copyMd").style.display = "none";
         render(msg.entries);
+        return;
+      }
+
+      if (msg.type === "PREFS") {
+        if (!editingId) setDisplay(msg.display);
         return;
       }
 
@@ -723,6 +810,7 @@
       requestResize();
       send({ type: "GET_JOURNAL" });
       send({ type: "GET_FILE_KEY" });
+      send({ type: "GET_PREFS" });
     };
   </script>
 </body>

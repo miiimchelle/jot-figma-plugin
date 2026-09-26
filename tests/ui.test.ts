@@ -164,9 +164,10 @@ describe("UI", () => {
   // Write entry form
   // -----------------------------------------------------------------------
   describe("Write entry form", () => {
-    it("has entry type dropdown with 5 options", () => {
+    it("has tag dropdown with 5 tags plus 'No tag'", () => {
       const select = doc.getElementById("type") as HTMLSelectElement;
-      expect(select.options).toHaveLength(5);
+      expect(select.options).toHaveLength(6);
+      expect(select.options[5].value).toBe("");
     });
 
     it("defaults to 'decision' type", () => {
@@ -200,6 +201,65 @@ describe("UI", () => {
 
       const addMsg = messages.find((m) => m.type === "ADD_ENTRY");
       expect(addMsg.entryType).toBe("tradeoff");
+    });
+  });
+
+  describe("Kind, heading and author toggles", () => {
+    const save = () => {
+      (doc.getElementById("note") as HTMLTextAreaElement).value = "N";
+      messages.length = 0;
+      (doc.getElementById("save") as HTMLElement).click();
+      return messages.find((m) => m.type === "ADD_ENTRY");
+    };
+    const kindBtn = (k: string) => doc.querySelector(`#kind [data-kind="${k}"]`) as HTMLElement;
+
+    it("defaults to sticky with all toggles on", () => {
+      expect(save()).toMatchObject({
+        kind: "sticky",
+        heading: "",
+        display: { avatar: true, name: true, timestamp: true },
+      });
+    });
+
+    it("sends annotation kind and heading", () => {
+      kindBtn("annotation").click();
+      (doc.getElementById("heading") as HTMLInputElement).value = "Colour";
+      expect(save()).toMatchObject({ kind: "annotation", heading: "Colour" });
+      expect(kindBtn("annotation").getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("sends SET_PREFS when a toggle changes", () => {
+      const avatar = doc.getElementById("showAvatar") as HTMLInputElement;
+      messages.length = 0;
+      avatar.checked = false;
+      avatar.dispatchEvent(new win.Event("change"));
+      expect(messages).toContainEqual({
+        type: "SET_PREFS",
+        display: { avatar: false, name: true, timestamp: true },
+      });
+    });
+
+    it("applies PREFS from the plugin", () => {
+      simulatePluginMessage(win, { type: "PREFS", display: { avatar: true, name: false, timestamp: false } });
+      expect(save().display).toEqual({ avatar: true, name: false, timestamp: false });
+    });
+
+    it("requests PREFS on load", () => {
+      expect(messages.some((m) => m.type === "GET_PREFS")).toBe(true);
+    });
+
+    it("fills kind, heading and toggles in edit mode", () => {
+      simulatePluginMessage(win, {
+        type: "JOURNAL",
+        entries: [{
+          id: "e1", createdAt: "2025-01-01", kind: "annotation", heading: "H", note: "N",
+          display: { avatar: false, name: false, timestamp: true },
+        }],
+      });
+      (doc.querySelector(".action-btn") as HTMLElement).click();
+      expect(kindBtn("annotation").dataset.state).toBe("active");
+      expect((doc.getElementById("heading") as HTMLInputElement).value).toBe("H");
+      expect((doc.getElementById("showName") as HTMLInputElement).checked).toBe(false);
     });
   });
 

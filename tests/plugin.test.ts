@@ -6,6 +6,7 @@ import { STORAGE_KEY, FILE_KEY_STORAGE } from "../logic";
 // ---------------------------------------------------------------------------
 function createFigmaMock() {
   const pluginData: Record<string, string> = {};
+  const clientData: Record<string, unknown> = {};
   const postMessage = vi.fn();
   const notify = vi.fn();
   const resize = vi.fn();
@@ -42,6 +43,12 @@ function createFigmaMock() {
     },
     notify,
     showUI: vi.fn(),
+    clientStorage: {
+      getAsync: vi.fn(async (key: string) => clientData[key]),
+      setAsync: vi.fn(async (key: string, val: unknown) => {
+        clientData[key] = val;
+      }),
+    },
     getNodeByIdAsync: vi.fn(async (id: string) => {
       if (id === mockNode.id) return mockNode;
       return null;
@@ -269,6 +276,29 @@ describe("Plugin message handling", () => {
       handler({ type: "UPDATE_ENTRY", id: "e1", entryType: "debt", note: "M" });
       const e = postMessage.mock.calls.find((c: any[]) => c[0].type === "JOURNAL")![0].entries[0];
       expect(e.kind).toBe("annotation");
+    });
+  });
+
+  describe("Prefs", () => {
+    it("returns default display when nothing is stored", async () => {
+      const { handler, postMessage } = await loadPlugin();
+      postMessage.mockClear();
+      await handler({ type: "GET_PREFS" });
+      expect(postMessage).toHaveBeenCalledWith({
+        type: "PREFS",
+        display: { avatar: true, name: true, timestamp: true },
+      });
+    });
+
+    it("round-trips SET_PREFS", async () => {
+      const { handler, postMessage } = await loadPlugin();
+      await handler({ type: "SET_PREFS", display: { avatar: false, name: true, timestamp: false } });
+      postMessage.mockClear();
+      await handler({ type: "GET_PREFS" });
+      expect(postMessage).toHaveBeenCalledWith({
+        type: "PREFS",
+        display: { avatar: false, name: true, timestamp: false },
+      });
     });
   });
 

@@ -57,6 +57,7 @@ export type JournalEntry = {
 
 export const STORAGE_KEY = "jot.journal.v1";
 export const FILE_KEY_STORAGE = "jot.filekey.v1";
+export const PREFS_STORAGE = "jot.prefs.v1";
 
 export function nodeIdToUrlFormat(nodeId: string): string {
   return nodeId.replace(/:/g, "-");
