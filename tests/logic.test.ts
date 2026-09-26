@@ -8,6 +8,7 @@ import {
   filterEntries,
   cleanNote,
   generateEntryId,
+  isEntryType,
   STORAGE_KEY,
   FILE_KEY_STORAGE,
   JournalEntry,
@@ -16,6 +17,14 @@ import {
 // ---------------------------------------------------------------------------
 // nodeIdToUrlFormat
 // ---------------------------------------------------------------------------
+describe("isEntryType", () => {
+  it("accepts known types and rejects others", () => {
+    expect(isEntryType("debt")).toBe(true);
+    expect(isEntryType("bogus")).toBe(false);
+    expect(isEntryType(undefined)).toBe(false);
+  });
+});
+
 describe("nodeIdToUrlFormat", () => {
   it("replaces colons with dashes", () => {
     expect(nodeIdToUrlFormat("38:4")).toBe("38-4");

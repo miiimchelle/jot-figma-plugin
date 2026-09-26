@@ -1,4 +1,10 @@
-export type EntryType = "decision" | "assumption" | "tradeoff" | "feedback" | "debt";
+export const ENTRY_TYPES = ["decision", "assumption", "tradeoff", "feedback", "debt"] as const;
+
+export type EntryType = (typeof ENTRY_TYPES)[number];
+
+export function isEntryType(value: unknown): value is EntryType {
+  return typeof value === "string" && (ENTRY_TYPES as readonly string[]).includes(value);
+}
 
 export type JournalEntry = {
   id: string;

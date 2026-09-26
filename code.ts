@@ -1,5 +1,4 @@
 import {
-  EntryType,
   JournalEntry,
   STORAGE_KEY,
   FILE_KEY_STORAGE,
@@ -8,6 +7,7 @@ import {
   toMarkdown,
   cleanNote,
   generateEntryId,
+  isEntryType,
 } from "./logic";
 
 figma.notify("Jot v2.0.0 ready");
@@ -87,14 +87,15 @@ function handleResize(msg: { width: number; height: number }) {
   figma.ui.resize(msg.width, msg.height);
 }
 
-function handleAddEntry(msg: { entryType: string; note: unknown }) {
+function handleAddEntry(msg: { entryType: unknown; note: unknown }) {
   const note = cleanNote(msg.note);
   if (!note) { err("Write a note first."); return; }
+  if (!isEntryType(msg.entryType)) { err("Unknown entry type."); return; }
 
   const entry: JournalEntry = {
     id: generateEntryId(),
     createdAt: new Date().toISOString(),
-    type: msg.entryType as EntryType,
+    type: msg.entryType,
     note,
     ...selectionContext(),
   };
@@ -105,9 +106,10 @@ function handleAddEntry(msg: { entryType: string; note: unknown }) {
   figma.notify("Saved to Jot");
 }
 
-function handleUpdateEntry(msg: { id: string; entryType: string; note: unknown }) {
+function handleUpdateEntry(msg: { id: string; entryType: unknown; note: unknown }) {
   const note = cleanNote(msg.note);
   if (!note) { err("Write a note first."); return; }
+  if (!isEntryType(msg.entryType)) { err("Unknown entry type."); return; }
 
   const entries = getJournal();
   const idx = entries.findIndex((e) => e.id === msg.id);
@@ -115,7 +117,7 @@ function handleUpdateEntry(msg: { id: string; entryType: string; note: unknown }
 
   entries[idx] = {
     ...entries[idx],
-    type: msg.entryType as EntryType,
+    type: msg.entryType,
     note,
     updatedAt: new Date().toISOString(),
   };
@@ -132,17 +134,18 @@ function handleDeleteEntry(msg: { id: string }) {
   figma.notify("Deleted entry");
 }
 
-function handleGoToEntry(msg: { nodeId?: string }) {
+// documentAccess: "dynamic-page" requires the async node/page APIs.
+async function handleGoToEntry(msg: { nodeId?: string }) {
   if (!msg.nodeId) return;
 
-  const node = figma.getNodeById(msg.nodeId);
+  const node = await figma.getNodeByIdAsync(msg.nodeId);
   if (!node || node.removed) {
     err("Linked layer/frame no longer exists.");
     return;
   }
 
   const page = getPageForNode(node);
-  if (page) figma.currentPage = page;
+  if (page && page !== figma.currentPage) await figma.setCurrentPageAsync(page);
 
   if (isSceneNode(node)) {
     figma.currentPage.selection = [node];
@@ -158,7 +161,7 @@ function handleExportMd() {
 // Message router
 // ---------------------------------------------------------------------------
 
-const handlers: Record<string, (msg: any) => void> = {
+const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   GET_JOURNAL: handleGetJournal,
   GET_FILE_KEY: handleGetFileKey,
   SET_FILE_KEY: handleSetFileKey,
@@ -177,7 +180,12 @@ const handlers: Record<string, (msg: any) => void> = {
 figma.showUI(__html__, { width: 360, height: 520 });
 sendFileKey();
 
-figma.ui.onmessage = (msg) => {
+figma.ui.onmessage = async (msg) => {
   const handler = handlers[msg.type];
-  if (handler) handler(msg);
+  if (!handler) return;
+  try {
+    await handler(msg);
+  } catch (_e) {
+    err("Something went wrong. Try again.");
+  }
 };

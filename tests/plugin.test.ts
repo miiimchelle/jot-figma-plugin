@@ -25,6 +25,7 @@ function createFigmaMock() {
     name: "Page 1",
     selection: [mockNode] as any[],
   };
+  mockNode.parent = mockPage;
 
   const figma = {
     root: {
@@ -41,9 +42,12 @@ function createFigmaMock() {
     },
     notify,
     showUI: vi.fn(),
-    getNodeById: vi.fn((id: string) => {
+    getNodeByIdAsync: vi.fn(async (id: string) => {
       if (id === mockNode.id) return mockNode;
       return null;
+    }),
+    setCurrentPageAsync: vi.fn(async (page: any) => {
+      figma.currentPage = page;
     }),
     viewport: {
       scrollAndZoomIntoView: vi.fn(),
@@ -174,6 +178,16 @@ describe("Plugin message handling", () => {
       });
     });
 
+    it("rejects unknown entry type", async () => {
+      const { handler, postMessage, figma } = await loadPlugin();
+      postMessage.mockClear();
+
+      handler({ type: "ADD_ENTRY", entryType: "<b>x</b>", note: "Note" });
+
+      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Unknown entry type." });
+      expect(figma.root.setPluginData).not.toHaveBeenCalled();
+    });
+
     it("trims whitespace from note", async () => {
       const { handler, postMessage } = await loadPlugin();
       postMessage.mockClear();
@@ -243,6 +257,15 @@ describe("Plugin message handling", () => {
       });
     });
 
+    it("rejects unknown entry type", async () => {
+      const { handler, postMessage } = await loadPlugin();
+      postMessage.mockClear();
+
+      handler({ type: "UPDATE_ENTRY", id: "e1", entryType: "bogus", note: "x" });
+
+      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Unknown entry type." });
+    });
+
     it("returns error for non-existent entry", async () => {
       const { handler, postMessage, figma } = await loadPlugin();
       (figma.root.getPluginData as ReturnType<typeof vi.fn>).mockImplementation(
@@ -296,17 +319,29 @@ describe("Plugin message handling", () => {
     it("selects and scrolls to the node", async () => {
       const { handler, figma, mockNode } = await loadPlugin();
 
-      handler({ type: "GO_TO_ENTRY", nodeId: "10:20" });
+      await handler({ type: "GO_TO_ENTRY", nodeId: "10:20" });
 
-      expect(figma.getNodeById).toHaveBeenCalledWith("10:20");
+      expect(figma.getNodeByIdAsync).toHaveBeenCalledWith("10:20");
+      expect(figma.setCurrentPageAsync).not.toHaveBeenCalled();
       expect(figma.viewport.scrollAndZoomIntoView).toHaveBeenCalledWith([mockNode]);
+    });
+
+    it("switches page when the node is on another page", async () => {
+      const { handler, figma, mockNode } = await loadPlugin();
+      const otherPage = { type: "PAGE", id: "page-2", name: "Page 2", selection: [] };
+      mockNode.parent = otherPage;
+
+      await handler({ type: "GO_TO_ENTRY", nodeId: "10:20" });
+
+      expect(figma.setCurrentPageAsync).toHaveBeenCalledWith(otherPage);
+      expect(otherPage.selection).toEqual([mockNode]);
     });
 
     it("shows error for non-existent node", async () => {
       const { handler, postMessage } = await loadPlugin();
       postMessage.mockClear();
 
-      handler({ type: "GO_TO_ENTRY", nodeId: "99:99" });
+      await handler({ type: "GO_TO_ENTRY", nodeId: "99:99" });
 
       expect(postMessage).toHaveBeenCalledWith({
         type: "ERROR",
@@ -316,11 +351,11 @@ describe("Plugin message handling", () => {
 
     it("does nothing when nodeId is missing", async () => {
       const { handler, figma } = await loadPlugin();
-      (figma.getNodeById as ReturnType<typeof vi.fn>).mockClear();
+      (figma.getNodeByIdAsync as ReturnType<typeof vi.fn>).mockClear();
 
-      handler({ type: "GO_TO_ENTRY" });
+      await handler({ type: "GO_TO_ENTRY" });
 
-      expect(figma.getNodeById).not.toHaveBeenCalled();
+      expect(figma.getNodeByIdAsync).not.toHaveBeenCalled();
     });
   });
 
