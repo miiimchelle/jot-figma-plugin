@@ -288,7 +288,7 @@ describe("UI", () => {
       const items = doc.querySelectorAll(".item");
       expect(items).toHaveLength(1);
       expect(items[0].textContent).toContain("My note");
-      expect(items[0].textContent).toContain("decision");
+      expect(items[0].textContent).toContain("Decision");
     });
 
     it("shows entry count", () => {
@@ -817,7 +817,14 @@ describe("UI", () => {
       const items = doc.querySelectorAll(".item");
       expect(items[1].querySelector(".item-heading")?.textContent).toBe("Head");
       expect(items[1].querySelector(".pill")).toBeNull();
-      expect(items[0].querySelector(".pill")?.textContent).toBe("debt");
+      expect(items[0].querySelector(".pill")?.textContent).toBe("Design debt");
+    });
+
+    it("tints tagged cards by tag and leaves untagged ones plain", () => {
+      journal();
+      const items = doc.querySelectorAll(".item");
+      expect(items[0].className).toContain("item--debt");
+      expect(items[1].classList.contains("tagged")).toBe(false);
     });
 
     it("filters by 'No tag'", () => {

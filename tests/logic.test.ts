@@ -15,6 +15,9 @@ import {
   formatStickyDate,
   initials,
   stickyContent,
+  hexToRgb,
+  TAG_PALETTES,
+  UNTAGGED_PALETTE,
   stickyPosition,
   STORAGE_KEY,
   FILE_KEY_STORAGE,
@@ -448,6 +451,17 @@ describe("sticky layout", () => {
   it("drops the footer when every toggle is off", () => {
     expect(stickyContent({ ...base, display: { avatar: false, name: false, timestamp: false } }).footer).toBeNull();
     expect(stickyContent(base).footer).toEqual({ avatar: true, name: "Luis", date: "29 September 2025" });
+  });
+
+  it("picks pill label and palette from the tag, falling back for unknown tags", () => {
+    expect(stickyContent({ ...base, type: "debt" })).toMatchObject({ pill: "Design debt", palette: TAG_PALETTES.debt });
+    const unknown = stickyContent({ ...base, type: "bogus" as any });
+    expect(unknown.pill).toBeUndefined();
+    expect(unknown.palette).toBe(UNTAGGED_PALETTE);
+  });
+
+  it("converts hex to Figma RGB", () => {
+    expect(hexToRgb("#FF8000")).toEqual({ r: 1, g: 128 / 255, b: 0 });
   });
 
   it("places the sticky 24px right of the layer", () => {

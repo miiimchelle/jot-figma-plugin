@@ -1,4 +1,13 @@
-import { JournalEntry, EntryType, stickyContent, stickyPosition, initials, Box } from "./logic";
+import {
+  JournalEntry,
+  EntryType,
+  stickyContent,
+  stickyPosition,
+  initials,
+  Box,
+  StickyPalette,
+  hexToRgb,
+} from "./logic";
 
 // ---------------------------------------------------------------------------
 // Sticky note rendering (Figma API). Layout decisions live in logic.ts.
@@ -10,9 +19,7 @@ const WIDTH = 300;
 const PAD = 20;
 const ICON = 20;
 
-const INK = { r: 0x4a / 255, g: 0x25 / 255, b: 0x11 / 255 };
-const BODY_BG = { r: 0xfd / 255, g: 0xf1 / 255, b: 0xc9 / 255 };
-const FOOTER_BG = { r: 0xfe / 255, g: 0xfa / 255, b: 0xeb / 255 };
+const solid = (hex: string): SolidPaint => ({ type: "SOLID", color: hexToRgb(hex) });
 
 const FONT_FAMILY = "Roboto Mono";
 const FALLBACK_FAMILY = "Inter";
@@ -25,8 +32,8 @@ const PENCIL_SVG =
 
 const TAG_ICONS: Partial<Record<EntryType, string>> = {};
 
-function iconSvg(tag?: EntryType): string {
-  return (tag && TAG_ICONS[tag]) || PENCIL_SVG;
+function iconSvg(tag: EntryType | undefined, ink: string): string {
+  return ((tag && TAG_ICONS[tag]) || PENCIL_SVG).replace(/#4A2511/g, ink);
 }
 
 async function loadFonts(): Promise<string> {
@@ -55,12 +62,12 @@ function autoFrame(name: string, direction: "VERTICAL" | "HORIZONTAL"): FrameNod
   return f;
 }
 
-function text(family: string, bold: boolean, size: number, chars: string): TextNode {
+function text(family: string, bold: boolean, size: number, chars: string, ink: string): TextNode {
   const t = figma.createText();
   t.fontName = { family, style: bold ? "Bold" : "Regular" };
   t.fontSize = size;
   t.lineHeight = { value: 150, unit: "PERCENT" };
-  t.fills = [{ type: "SOLID", color: INK }];
+  t.fills = [solid(ink)];
   t.characters = chars;
   return t;
 }
@@ -71,7 +78,11 @@ function fillWidth(node: TextNode) {
   node.textAutoResize = "HEIGHT";
 }
 
-async function avatarNode(author: JournalEntry["author"], family: string): Promise<SceneNode> {
+async function avatarNode(
+  author: JournalEntry["author"],
+  family: string,
+  p: StickyPalette
+): Promise<SceneNode> {
   const size = 32;
   if (author?.photoUrl) {
     try {
@@ -92,16 +103,29 @@ async function avatarNode(author: JournalEntry["author"], family: string): Promi
   circle.cornerRadius = size / 2;
   circle.primaryAxisAlignItems = "CENTER";
   circle.counterAxisAlignItems = "CENTER";
-  circle.fills = [{ type: "SOLID", color: BODY_BG }];
-  circle.strokes = [{ type: "SOLID", color: INK }];
+  circle.fills = [solid(p.body)];
+  circle.strokes = [solid(p.ink)];
   circle.strokeWeight = 1;
-  circle.appendChild(text(family, true, 13, initials(author?.name)));
+  circle.appendChild(text(family, true, 13, initials(author?.name), p.ink));
   return circle;
+}
+
+function pillNode(family: string, label: string, p: StickyPalette): FrameNode {
+  const pill = autoFrame("Tag", "HORIZONTAL");
+  pill.paddingTop = pill.paddingBottom = 2;
+  pill.paddingLeft = pill.paddingRight = 8;
+  pill.cornerRadius = 999;
+  pill.fills = [solid("#FFFFFF")];
+  pill.strokes = [solid(p.border)];
+  pill.strokeWeight = 1;
+  pill.appendChild(text(family, true, 12, label, p.ink));
+  return pill;
 }
 
 export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
   const family = await loadFonts();
   const c = stickyContent(entry);
+  const p = c.palette;
 
   const root = autoFrame(entry.heading ? `Jot: ${entry.heading}` : "Jot sticky", "VERTICAL");
   root.primaryAxisSizingMode = "AUTO";
@@ -109,8 +133,8 @@ export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
   root.resize(WIDTH, root.height);
   root.cornerRadius = 12;
   root.clipsContent = true;
-  root.fills = [{ type: "SOLID", color: BODY_BG }];
-  root.strokes = [{ type: "SOLID", color: INK }];
+  root.fills = [solid(p.body)];
+  root.strokes = [solid(p.border)];
   root.strokeWeight = 1;
   root.effects = [
     {
@@ -133,7 +157,7 @@ export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
   root.appendChild(body);
   body.layoutSizingHorizontal = "FILL";
 
-  const icon = figma.createNodeFromSvg(iconSvg(c.tag));
+  const icon = figma.createNodeFromSvg(iconSvg(c.tag, p.ink));
   icon.name = "Icon";
   icon.resize(ICON, ICON);
   body.appendChild(icon);
@@ -143,12 +167,13 @@ export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
   body.appendChild(column);
   column.layoutSizingHorizontal = "FILL";
 
+  if (c.pill) column.appendChild(pillNode(family, c.pill, p));
   if (c.heading) {
-    const h = text(family, true, 16, c.heading);
+    const h = text(family, true, 16, c.heading, p.ink);
     column.appendChild(h);
     fillWidth(h);
   }
-  const n = text(family, false, 14, c.note);
+  const n = text(family, false, 14, c.note, p.ink);
   column.appendChild(n);
   fillWidth(n);
 
@@ -159,19 +184,19 @@ export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
     footer.counterAxisAlignItems = "CENTER";
     footer.paddingTop = footer.paddingBottom = 12;
     footer.paddingLeft = footer.paddingRight = PAD;
-    footer.fills = [{ type: "SOLID", color: FOOTER_BG }];
-    footer.strokes = [{ type: "SOLID", color: INK }];
+    footer.fills = [solid(p.footer)];
+    footer.strokes = [solid(p.border)];
     footer.strokeTopWeight = 1;
     footer.strokeBottomWeight = footer.strokeLeftWeight = footer.strokeRightWeight = 0;
     root.appendChild(footer);
     footer.layoutSizingHorizontal = "FILL";
 
-    if (c.footer.avatar) footer.appendChild(await avatarNode(entry.author, family));
+    if (c.footer.avatar) footer.appendChild(await avatarNode(entry.author, family, p));
 
     if (c.footer.name || c.footer.date) {
       const meta = autoFrame("Author", "VERTICAL");
-      if (c.footer.name) meta.appendChild(text(family, true, 14, c.footer.name));
-      if (c.footer.date) meta.appendChild(text(family, false, 13, c.footer.date));
+      if (c.footer.name) meta.appendChild(text(family, true, 14, c.footer.name, p.ink));
+      if (c.footer.date) meta.appendChild(text(family, false, 13, c.footer.date, p.ink));
       footer.appendChild(meta);
     }
   }

@@ -209,6 +209,15 @@
       background: var(--surface-subtle);
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
+    /* Tagged cards take their pill colour; the pill turns white to stay visible. */
+    .item--decision { --tag-bg: var(--color-pill-decision-bg); --tag-border: var(--color-pill-decision-border); }
+    .item--assumption { --tag-bg: var(--color-pill-assumption-bg); --tag-border: var(--color-pill-assumption-border); }
+    .item--tradeoff { --tag-bg: var(--color-pill-tradeoff-bg); --tag-border: var(--color-pill-tradeoff-border); }
+    .item--feedback { --tag-bg: var(--color-pill-feedback-bg); --tag-border: var(--color-pill-feedback-border); }
+    .item--debt { --tag-bg: var(--color-pill-debt-bg); --tag-border: var(--color-pill-debt-border); }
+    .item.tagged { background: var(--tag-bg); border-color: var(--tag-border); }
+    .item.tagged.clickable:hover { background: var(--tag-bg); filter: brightness(0.97); }
+    .item.tagged .pill { background-color: var(--surface-default); }
     .item.clickable:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
     }
@@ -607,6 +616,11 @@
     }
 
     // --- Edit mode ---
+    // Kept in sync with logic.ts TAG_LABELS.
+    const TAG_LABEL = {
+      decision: "Decision", assumption: "Assumption", tradeoff: "Trade-off", feedback: "Feedback", debt: "Design debt",
+    };
+
     // --- Author display ---
     const DISPLAY_IDS = { avatar: "showAvatar", name: "showName", timestamp: "showTimestamp" };
 
@@ -678,7 +692,8 @@
 
       for (const e of filtered) {
         const item = document.createElement("div");
-        item.className = "item" + (e.nodeId ? " clickable" : "");
+        const tag = TAG_LABEL[e.type] ? e.type : "";
+        item.className = "item" + (tag ? ` tagged item--${tag}` : "") + (e.nodeId ? " clickable" : "");
         if (e.nodeId) {
           item.setAttribute("tabindex", "0");
           item.onclick = () => send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId });
@@ -690,7 +705,7 @@
           : e.pageName || "(not linked)";
 
         item.innerHTML = `
-          <div class="meta">${e.type ? `<span class="pill pill--${escapeHtml(e.type)}">${escapeHtml(e.type)}</span>` : ""} ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
+          <div class="meta">${tag ? `<span class="pill pill--${tag}">${TAG_LABEL[tag]}</span>` : ""} ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
           <div class="linked">Linked to: ${escapeHtml(linked)}</div>
           ${e.heading ? `<div class="item-heading">${escapeHtml(e.heading)}</div>` : ""}
           <div class="item-note">${escapeHtml(e.note)}</div>

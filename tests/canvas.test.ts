@@ -64,6 +64,22 @@ describe("syncSticky", () => {
   });
 });
 
+describe("sticky colours and pill", () => {
+  const fill = (n: any) => n.fills[0].color;
+
+  it("uses the tag colour and adds a pill above the heading", async () => {
+    const sticky = mock.nodes.get((await syncSticky(entry({ type: "tradeoff" })))!)!;
+    expect(fill(sticky)).toEqual({ r: 0xed / 255, g: 0xe9 / 255, b: 0xfe / 255 });
+    expect(mock.texts(sticky).slice(0, 2)).toEqual(["Trade-off", "Colour and typography"]);
+  });
+
+  it("keeps yellow and no pill when untagged", async () => {
+    const sticky = mock.nodes.get((await syncSticky(entry()))!)!;
+    expect(fill(sticky)).toEqual({ r: 0xfd / 255, g: 0xf1 / 255, b: 0xc9 / 255 });
+    expect(mock.texts(sticky)[0]).toBe("Colour and typography");
+  });
+});
+
 describe("removeSticky", () => {
   it("removes the sticky and ignores missing ones", async () => {
     const sticky = mock.nodes.get((await syncSticky(entry()))!)!;

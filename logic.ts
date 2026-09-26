@@ -162,8 +162,42 @@ export function initials(name?: string): string {
   return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join("");
 }
 
+export const TAG_LABELS: Record<EntryType, string> = {
+  decision: "Decision",
+  assumption: "Assumption",
+  tradeoff: "Trade-off",
+  feedback: "Feedback",
+  debt: "Design debt",
+};
+
+/** Hex colours for a sticky. Tagged stickies reuse the plugin's pill colours. */
+export type StickyPalette = { body: string; footer: string; ink: string; border: string };
+
+export const UNTAGGED_PALETTE: StickyPalette = {
+  body: "#FDF1C9",
+  footer: "#FEFAEB",
+  ink: "#4A2511",
+  border: "#4A2511",
+};
+
+export const TAG_PALETTES: Record<EntryType, StickyPalette> = {
+  decision: { body: "#DBEAFE", footer: "#EFF6FF", ink: "#1D4ED8", border: "#93C5FD" },
+  assumption: { body: "#FEF3C7", footer: "#FFFBEB", ink: "#B45309", border: "#FCD34D" },
+  tradeoff: { body: "#EDE9FE", footer: "#F5F3FF", ink: "#5B21B6", border: "#C4B5FD" },
+  feedback: { body: "#D1FAE5", footer: "#ECFDF5", ink: "#047857", border: "#6EE7B7" },
+  debt: { body: "#FEE2E2", footer: "#FEF2F2", ink: "#B91C1C", border: "#FCA5A5" },
+};
+
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
+}
+
 export type StickyContent = {
   tag?: EntryType;
+  /** Pill text, e.g. "Trade-off". Absent when untagged. */
+  pill?: string;
+  palette: StickyPalette;
   heading?: string;
   note: string;
   footer: { avatar: boolean; name?: string; date?: string } | null;
@@ -174,7 +208,15 @@ export function stickyContent(entry: JournalEntry): StickyContent {
   const name = display.name ? entry.author?.name : undefined;
   const date = display.timestamp ? formatStickyDate(entry.createdAt) || undefined : undefined;
   const footer = display.avatar || name || date ? { avatar: display.avatar, name, date } : null;
-  return { tag: entry.type, heading: entry.heading, note: entry.note, footer };
+  const tag = isEntryType(entry.type) ? entry.type : undefined;
+  return {
+    tag,
+    pill: tag && TAG_LABELS[tag],
+    palette: tag ? TAG_PALETTES[tag] : UNTAGGED_PALETTE,
+    heading: entry.heading,
+    note: entry.note,
+    footer,
+  };
 }
 
 export type Box = { x: number; y: number; width: number; height: number };
