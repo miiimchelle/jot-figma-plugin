@@ -6,14 +6,6 @@ export function isEntryType(value: unknown): value is EntryType {
   return typeof value === "string" && (ENTRY_TYPES as readonly string[]).includes(value);
 }
 
-export const ENTRY_KINDS = ["sticky", "annotation"] as const;
-
-export type EntryKind = (typeof ENTRY_KINDS)[number];
-
-export function isEntryKind(value: unknown): value is EntryKind {
-  return typeof value === "string" && (ENTRY_KINDS as readonly string[]).includes(value);
-}
-
 /** Tag is optional: "" / undefined means no tag. */
 export function parseTag(value: unknown): EntryType | undefined | null {
   if (value === undefined || value === "") return undefined;
@@ -46,7 +38,6 @@ export type JournalEntry = {
   id: string;
   createdAt: string;
   updatedAt?: string;
-  kind: EntryKind;
   type?: EntryType;
   heading?: string;
   note: string;
@@ -77,16 +68,11 @@ export function buildNodeUrl(fileKey: string | undefined, nodeId?: string): stri
   return `https://www.figma.com/design/${fileKey}/?node-id=${encodeURIComponent(nodeIdForUrl)}`;
 }
 
-/** Entries saved before kinds existed become stickies. */
-export function migrateEntry(entry: JournalEntry): JournalEntry {
-  return isEntryKind(entry.kind) ? entry : { ...entry, kind: "sticky" };
-}
-
 export function parseJournal(raw: string): JournalEntry[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as JournalEntry[]).map(migrateEntry) : [];
+    return Array.isArray(parsed) ? (parsed as JournalEntry[]) : [];
   } catch {
     return [];
   }
@@ -104,7 +90,7 @@ export function toMarkdown(entries: JournalEntry[], fileKey?: string): string {
       ? ` (edited ${new Date(e.updatedAt).toLocaleString()})`
       : ``;
 
-    lines.push(`## ${e.type ?? e.kind} — ${created}${edited}`);
+    lines.push(`## ${e.type ?? "note"} — ${created}${edited}`);
     if (e.heading) lines.push(`**${e.heading}**`, ``);
 
     const url = e.nodeUrl ?? buildNodeUrl(fileKey, e.nodeId);
@@ -132,15 +118,9 @@ export function extractFileKey(input: string): string | null {
   return null;
 }
 
-export function filterEntries(
-  entries: JournalEntry[],
-  filterType: string,
-  filterKind = "all"
-): JournalEntry[] {
+export function filterEntries(entries: JournalEntry[], filterType: string): JournalEntry[] {
   return entries.filter(
-    (e) =>
-      (filterType === "all" || (filterType === "none" ? !e.type : e.type === filterType)) &&
-      (filterKind === "all" || e.kind === filterKind)
+    (e) => filterType === "all" || (filterType === "none" ? !e.type : e.type === filterType)
   );
 }
 

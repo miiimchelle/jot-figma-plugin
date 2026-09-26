@@ -119,7 +119,7 @@ describe("Plugin message handling", () => {
 
       expect(postMessage).toHaveBeenCalledWith({
         type: "JOURNAL",
-        entries: [{ ...entries[0], kind: "sticky" }],
+        entries,
       });
     });
   });
@@ -229,53 +229,30 @@ describe("Plugin message handling", () => {
     });
   });
 
-  describe("ADD_ENTRY kinds", () => {
+  describe("ADD_ENTRY tag, heading and display", () => {
     const lastEntries = (postMessage: any) =>
       postMessage.mock.calls.find((c: any[]) => c[0].type === "JOURNAL")![0].entries;
 
-    it("defaults to sticky with no tag", async () => {
+    it("allows no tag", async () => {
       const { handler, postMessage } = await loadPlugin();
       handler({ type: "ADD_ENTRY", entryType: "", note: "N" });
       const [e] = lastEntries(postMessage);
-      expect(e.kind).toBe("sticky");
       expect(e.type).toBeUndefined();
     });
 
-    it("stores annotation kind, heading and display", async () => {
+    it("stores heading and display", async () => {
       const { handler, postMessage } = await loadPlugin();
       handler({
         type: "ADD_ENTRY",
-        kind: "annotation",
         heading: " Colour ",
         note: "N",
         display: { avatar: false, name: true, timestamp: false },
       });
       const [e] = lastEntries(postMessage);
       expect(e).toMatchObject({
-        kind: "annotation",
         heading: "Colour",
         display: { avatar: false, name: true, timestamp: false },
       });
-    });
-
-    it("rejects unknown kind", async () => {
-      const { handler, postMessage } = await loadPlugin();
-      handler({ type: "ADD_ENTRY", kind: "bogus", note: "N" });
-      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Unknown entry kind." });
-    });
-  });
-
-  describe("UPDATE_ENTRY kind", () => {
-    it("keeps existing kind when none is sent", async () => {
-      const { handler, postMessage, figma } = await loadPlugin();
-      const entries = [{ id: "e1", createdAt: "2025-01-01", kind: "annotation", note: "N" }];
-      (figma.root.getPluginData as ReturnType<typeof vi.fn>).mockImplementation(
-        (key: string) => key === STORAGE_KEY ? JSON.stringify(entries) : ""
-      );
-      postMessage.mockClear();
-      handler({ type: "UPDATE_ENTRY", id: "e1", entryType: "debt", note: "M" });
-      const e = postMessage.mock.calls.find((c: any[]) => c[0].type === "JOURNAL")![0].entries[0];
-      expect(e.kind).toBe("annotation");
     });
   });
 
@@ -314,18 +291,6 @@ describe("Plugin message handling", () => {
       expect(canvas.nodes.get(e.stickyNodeId)?.parent).toBe(canvas.page);
     });
 
-    it("annotations get no sticky, and changing kind removes it", async () => {
-      const { handler, postMessage, canvas } = await loadPlugin();
-      await handler({ type: "ADD_ENTRY", kind: "annotation", note: "N" });
-      expect(lastJournal(postMessage)[0].stickyNodeId).toBeUndefined();
-
-      await handler({ type: "ADD_ENTRY", note: "S" });
-      const sticky = lastJournal(postMessage)[0];
-      await handler({ type: "CHANGE_KIND", id: sticky.id, kind: "annotation" });
-      expect(canvas.nodes.has(sticky.stickyNodeId)).toBe(false);
-      expect(lastJournal(postMessage)[0].stickyNodeId).toBeUndefined();
-    });
-
     it("DELETE_ENTRY removes the sticky", async () => {
       const { handler, postMessage, canvas } = await loadPlugin();
       await handler({ type: "ADD_ENTRY", note: "N" });
@@ -360,30 +325,6 @@ describe("Plugin message handling", () => {
       const [e] = lastJournal(postMessage);
       await handler({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId });
       expect(figma.currentPage.selection).toEqual([canvas.nodes.get(e.stickyNodeId)]);
-    });
-  });
-
-  describe("CHANGE_KIND", () => {
-    it("switches kind and keeps createdAt", async () => {
-      const { handler, postMessage, notify, figma } = await loadPlugin();
-      const entries = [{ id: "e1", createdAt: "2025-01-01", kind: "sticky", note: "N" }];
-      (figma.root.getPluginData as ReturnType<typeof vi.fn>).mockImplementation(
-        (key: string) => key === STORAGE_KEY ? JSON.stringify(entries) : ""
-      );
-      postMessage.mockClear();
-
-      handler({ type: "CHANGE_KIND", id: "e1", kind: "annotation" });
-
-      expect(notify).toHaveBeenCalledWith("Changed to annotation");
-      const e = postMessage.mock.calls.find((c: any[]) => c[0].type === "JOURNAL")![0].entries[0];
-      expect(e).toMatchObject({ kind: "annotation", createdAt: "2025-01-01" });
-      expect(e.updatedAt).toBeDefined();
-    });
-
-    it("errors on unknown id", async () => {
-      const { handler, postMessage } = await loadPlugin();
-      handler({ type: "CHANGE_KIND", id: "nope", kind: "sticky" });
-      expect(postMessage).toHaveBeenCalledWith({ type: "ERROR", message: "Entry not found." });
     });
   });
 

@@ -32,12 +32,6 @@
       --color-pill-debt-bg: #fee2e2;
       --color-pill-debt-fg: #b91c1c;
       --color-pill-debt-border: #fca5a5;
-      --color-kind-sticky-bg: #fdf1c9;
-      --color-kind-sticky-fg: #4a2511;
-      --color-kind-sticky-border: #e9d18a;
-      --color-kind-annotation-bg: #ece7ff;
-      --color-kind-annotation-fg: #4b2fb3;
-      --color-kind-annotation-border: #c6b8ff;
       --color-destructive: #b00020;
       --color-success: #22c55e;
       /* Primitive – spacing */
@@ -88,8 +82,6 @@
       --color-pill-tradeoff-bg: #2e2447; --color-pill-tradeoff-fg: #c4b5fd; --color-pill-tradeoff-border: #5b21b6;
       --color-pill-feedback-bg: #12352a; --color-pill-feedback-fg: #6ee7b7; --color-pill-feedback-border: #047857;
       --color-pill-debt-bg: #3f1d1d; --color-pill-debt-fg: #fca5a5; --color-pill-debt-border: #b91c1c;
-      --color-kind-sticky-bg: #3a3014; --color-kind-sticky-fg: #fde68a; --color-kind-sticky-border: #8a6d1f;
-      --color-kind-annotation-bg: #2a2150; --color-kind-annotation-fg: #c6b8ff; --color-kind-annotation-border: #5b43c9;
     }
 
     body {
@@ -135,7 +127,7 @@
       border-radius: var(--radius-lg); padding: var(--space-1);
       background: var(--surface-elevated); box-sizing: border-box;
     }
-    .tabs-trigger, .seg-trigger {
+    .tabs-trigger {
       flex: 1; height: 28px; border: 0; border-radius: var(--radius-md);
       background: transparent;
       cursor: pointer; font-size: var(--font-size-base); font-weight: 600;
@@ -143,11 +135,11 @@
       margin-top: 0; width: 100%;
       transition: background var(--transition-default), box-shadow var(--transition-default), color var(--transition-default);
     }
-    .tabs-trigger[data-state="active"], .seg-trigger[data-state="active"] {
+    .tabs-trigger[data-state="active"] {
       background: var(--surface-default); color: var(--text-primary);
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
-    .tabs-trigger:focus-visible, .seg-trigger:focus-visible {
+    .tabs-trigger:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
     }
 
@@ -229,19 +221,6 @@
       display: inline-block; padding: 2px var(--space-2);
       border: 1px solid var(--border-muted); border-radius: var(--radius-full);
       font-size: var(--font-size-caption); margin-right: var(--space-2);
-    }
-    .kind-badge {
-      display: inline-block; padding: 2px var(--space-2); margin-right: var(--space-2);
-      border: 1px solid; border-radius: var(--radius-sm);
-      font-size: var(--font-size-caption); font-weight: 600;
-    }
-    .kind-badge--sticky {
-      background: var(--color-kind-sticky-bg); color: var(--color-kind-sticky-fg);
-      border-color: var(--color-kind-sticky-border);
-    }
-    .kind-badge--annotation {
-      background: var(--color-kind-annotation-bg); color: var(--color-kind-annotation-fg);
-      border-color: var(--color-kind-annotation-border);
     }
     .item-heading {
       font-size: var(--font-size-lead); font-weight: 600; line-height: 1.3; margin-bottom: var(--space-1);
@@ -326,8 +305,6 @@
       background: var(--surface-subtle-alt); border: 1px solid var(--border-default);
       border-radius: var(--radius-md); padding: var(--space-4); margin-top: var(--space-4);
     }
-    .kind-list { margin-top: var(--space-2); }
-    #kindHelper { margin-top: var(--space-2); }
     .text-input {
       width: 100%; height: 28px; box-sizing: border-box; margin-top: var(--space-2);
       font-size: var(--font-size-base); padding: 0 var(--space-3);
@@ -416,13 +393,6 @@
 
   <!-- WRITE -->
   <div id="panelWrite" class="panel active">
-    <div class="label"><strong>Kind</strong></div>
-    <div id="kind" class="tabs-list kind-list" role="radiogroup" aria-label="Entry kind">
-      <button type="button" class="seg-trigger" role="radio" data-kind="sticky" data-state="active" aria-checked="true">Sticky</button>
-      <button type="button" class="seg-trigger" role="radio" data-kind="annotation" data-state="inactive" aria-checked="false">Annotation</button>
-    </div>
-    <div id="kindHelper" class="helper"></div>
-
     <div class="label" > <strong>Tag</strong></div>
     <div class="helper">What kind of thinking are you capturing?</div>
     <select id="type">
@@ -455,11 +425,6 @@
   <div id="panelView" class="panel">
     <div class="filter-row">
       <span class="filter-label">Filter:</span>
-      <select id="filterKind" aria-label="Filter by kind">
-        <option value="all">All kinds</option>
-        <option value="sticky">Stickies</option>
-        <option value="annotation">Annotations</option>
-      </select>
       <select id="filterType" aria-label="Filter by tag">
         <option value="all">All tags</option>
         <option value="decision">Decision</option>
@@ -627,49 +592,22 @@
 
     // --- Filter ---
     $("filterType").onchange = () => render(currentEntries);
-    $("filterKind").onchange = () => render(currentEntries);
 
     // Kept in sync with logic.ts filterEntries().
     function getFilteredEntries(entries) {
       const t = $("filterType").value;
-      const k = $("filterKind").value;
-      return entries.filter((e) =>
-        (t === "all" || (t === "none" ? !e.type : e.type === t)) &&
-        (k === "all" || (e.kind || "sticky") === k));
+      return entries.filter((e) => t === "all" || (t === "none" ? !e.type : e.type === t));
     }
 
     const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
     function countLabel(all, filtered) {
-      const filtering = $("filterType").value !== "all" || $("filterKind").value !== "all";
-      if (filtering) return `${filtered.length} of ${plural(all.length, "entry", "entries")}`;
-      const stickies = all.filter((e) => (e.kind || "sticky") === "sticky").length;
-      return `${plural(stickies, "sticky", "stickies")} · ${plural(all.length - stickies, "annotation", "annotations")}`;
+      if ($("filterType").value !== "all") return `${filtered.length} of ${plural(all.length, "entry", "entries")}`;
+      return plural(all.length, "entry", "entries");
     }
 
     // --- Edit mode ---
-    // --- Kind + author display ---
-    const KIND_HELP = {
-      sticky: "Work in progress. Shows as a sticky note next to the layer.",
-      annotation: "For handover. Shows as a Figma annotation in Dev Mode.",
-    };
-    const KIND_LABEL = { sticky: "Sticky", annotation: "Annotation" };
-    let currentKind = "sticky";
-
-    function setKind(kind) {
-      currentKind = kind;
-      for (const btn of document.querySelectorAll("#kind [data-kind]")) {
-        const active = btn.dataset.kind === kind;
-        btn.dataset.state = active ? "active" : "inactive";
-        btn.setAttribute("aria-checked", String(active));
-      }
-      $("kindHelper").textContent = KIND_HELP[kind];
-    }
-    for (const btn of document.querySelectorAll("#kind [data-kind]")) {
-      btn.onclick = () => setKind(btn.dataset.kind);
-    }
-    setKind("sticky");
-
+    // --- Author display ---
     const DISPLAY_IDS = { avatar: "showAvatar", name: "showName", timestamp: "showTimestamp" };
 
     function getDisplay() {
@@ -693,7 +631,6 @@
 
     function enterEditMode(entry) {
       editingId = entry.id;
-      setKind(entry.kind || "sticky");
       $("type").value = entry.type || "";
       $("heading").value = entry.heading || "";
       $("note").value = entry.note;
@@ -748,13 +685,12 @@
           item.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId }); } };
         }
 
-        const kind = e.kind === "annotation" ? "annotation" : "sticky";
         const linked = e.pageName && e.nodeName
           ? `${e.pageName} → ${e.nodeName}`
           : e.pageName || "(not linked)";
 
         item.innerHTML = `
-          <div class="meta"><span class="kind-badge kind-badge--${kind}">${KIND_LABEL[kind]}</span>${e.type ? `<span class="pill pill--${escapeHtml(e.type)}">${escapeHtml(e.type)}</span>` : ""} ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
+          <div class="meta">${e.type ? `<span class="pill pill--${escapeHtml(e.type)}">${escapeHtml(e.type)}</span>` : ""} ${new Date(e.createdAt).toLocaleString()}${e.updatedAt ? " (edited)" : ""}</div>
           <div class="linked">Linked to: ${escapeHtml(linked)}</div>
           ${e.heading ? `<div class="item-heading">${escapeHtml(e.heading)}</div>` : ""}
           <div class="item-note">${escapeHtml(e.note)}</div>
@@ -776,18 +712,7 @@
           if (confirm("Delete this entry?")) send({ type: "DELETE_ENTRY", id: e.id });
         };
 
-        const other = kind === "sticky" ? "annotation" : "sticky";
-        const changeBtn = document.createElement("button");
-        changeBtn.className = "action-btn";
-        changeBtn.textContent = `Change to ${other}`;
-        changeBtn.onclick = (ev) => {
-          ev.stopPropagation();
-          setError("");
-          send({ type: "CHANGE_KIND", id: e.id, kind: other });
-        };
-
         actions.appendChild(editBtn);
-        actions.appendChild(changeBtn);
         actions.appendChild(delBtn);
         list.appendChild(item);
       }
@@ -801,7 +726,6 @@
     $("save").onclick = () => {
       setError("");
       const payload = {
-        kind: currentKind,
         entryType: $("type").value,
         heading: $("heading").value,
         note: $("note").value,

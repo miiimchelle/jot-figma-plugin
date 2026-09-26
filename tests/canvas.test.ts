@@ -8,7 +8,6 @@ let mock: ReturnType<typeof createCanvasMock>;
 const entry = (over: Partial<JournalEntry> = {}): JournalEntry => ({
   id: "e1",
   createdAt: "2025-09-29T10:00:00Z",
-  kind: "sticky",
   heading: "Colour and typography",
   note: "Merge collections.",
   nodeId: "10:20",
@@ -58,11 +57,10 @@ describe("syncSticky", () => {
     expect(mock.texts(next)).toContain("Edited");
   });
 
-  it("removes the sticky for annotations and unlinked entries", async () => {
+  it("removes the sticky when the entry has no linked layer", async () => {
     const sticky = mock.nodes.get((await syncSticky(entry()))!)!;
-    expect(await syncSticky(entry({ kind: "annotation", stickyNodeId: sticky.id }))).toBeUndefined();
+    expect(await syncSticky(entry({ nodeId: undefined, stickyNodeId: sticky.id }))).toBeUndefined();
     expect(sticky.removed).toBe(true);
-    expect(await syncSticky(entry({ nodeId: undefined }))).toBeUndefined();
   });
 });
 

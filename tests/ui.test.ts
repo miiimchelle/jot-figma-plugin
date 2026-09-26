@@ -204,28 +204,25 @@ describe("UI", () => {
     });
   });
 
-  describe("Kind, heading and author toggles", () => {
+  describe("Heading and author toggles", () => {
     const save = () => {
       (doc.getElementById("note") as HTMLTextAreaElement).value = "N";
       messages.length = 0;
       (doc.getElementById("save") as HTMLElement).click();
       return messages.find((m) => m.type === "ADD_ENTRY");
     };
-    const kindBtn = (k: string) => doc.querySelector(`#kind [data-kind="${k}"]`) as HTMLElement;
-
-    it("defaults to sticky with all toggles on", () => {
+    it("defaults to all toggles on", () => {
       expect(save()).toMatchObject({
-        kind: "sticky",
         heading: "",
         display: { avatar: true, name: true, timestamp: true },
       });
     });
 
-    it("sends annotation kind and heading", () => {
-      kindBtn("annotation").click();
+    it("sends heading and no kind", () => {
       (doc.getElementById("heading") as HTMLInputElement).value = "Colour";
-      expect(save()).toMatchObject({ kind: "annotation", heading: "Colour" });
-      expect(kindBtn("annotation").getAttribute("aria-checked")).toBe("true");
+      const msg = save();
+      expect(msg).toMatchObject({ heading: "Colour" });
+      expect(msg).not.toHaveProperty("kind");
     });
 
     it("sends SET_PREFS when a toggle changes", () => {
@@ -248,16 +245,15 @@ describe("UI", () => {
       expect(messages.some((m) => m.type === "GET_PREFS")).toBe(true);
     });
 
-    it("fills kind, heading and toggles in edit mode", () => {
+    it("fills heading and toggles in edit mode", () => {
       simulatePluginMessage(win, {
         type: "JOURNAL",
         entries: [{
-          id: "e1", createdAt: "2025-01-01", kind: "annotation", heading: "H", note: "N",
+          id: "e1", createdAt: "2025-01-01", heading: "H", note: "N",
           display: { avatar: false, name: false, timestamp: true },
         }],
       });
       (doc.querySelector(".action-btn") as HTMLElement).click();
-      expect(kindBtn("annotation").dataset.state).toBe("active");
       expect((doc.getElementById("heading") as HTMLInputElement).value).toBe("H");
       expect((doc.getElementById("showName") as HTMLInputElement).checked).toBe(false);
     });
@@ -307,7 +303,7 @@ describe("UI", () => {
       });
 
       const count = doc.getElementById("entryCount");
-      expect(count?.textContent).toBe("2 stickies · 0 annotations");
+      expect(count?.textContent).toBe("2 entries");
     });
 
     it("shows singular entry count for 1 entry", () => {
@@ -321,7 +317,7 @@ describe("UI", () => {
       });
 
       const count = doc.getElementById("entryCount");
-      expect(count?.textContent).toBe("1 sticky · 0 annotations");
+      expect(count?.textContent).toBe("1 entry");
     });
 
     it("updates tab count badge", () => {
@@ -798,62 +794,39 @@ describe("UI", () => {
     });
   });
 
-  describe("View entries: kinds", () => {
+  describe("View entries", () => {
     const journal = () =>
       simulatePluginMessage(win, {
         type: "JOURNAL",
         entries: [
-          { id: "s1", createdAt: "2025-01-01", kind: "sticky", type: "debt", note: "A" },
+          { id: "s1", createdAt: "2025-01-01", type: "debt", note: "A" },
           { id: "a1", createdAt: "2025-01-02", kind: "annotation", heading: "Head", note: "B" },
-          { id: "s2", createdAt: "2025-01-03", note: "C" },
         ],
       });
-    const ids = () => [...doc.querySelectorAll(".item-note")].map((n) => n.textContent);
-    const filter = (id: string, value: string) => {
-      const sel = doc.getElementById(id) as HTMLSelectElement;
-      sel.value = value;
-      sel.dispatchEvent(new win.Event("change"));
-    };
 
-    it("shows count split by kind", () => {
+    it("has no kind filter, badge or Change to buttons", () => {
       journal();
-      expect(doc.getElementById("entryCount")?.textContent).toBe("2 stickies · 1 annotation");
+      expect(doc.getElementById("filterKind")).toBeNull();
+      expect(doc.querySelector(".kind-badge")).toBeNull();
+      const labels = [...doc.querySelectorAll(".action-btn")].map((b) => b.textContent);
+      expect(labels).toEqual(["Edit", "Delete", "Edit", "Delete"]);
     });
 
-    it("filters by kind, treating missing kind as sticky", () => {
-      journal();
-      filter("filterKind", "sticky");
-      expect(ids()).toEqual(["A", "C"]);
-      expect(doc.getElementById("entryCount")?.textContent).toBe("2 of 3 entries");
-    });
-
-    it("filters by 'No tag' combined with kind", () => {
-      journal();
-      filter("filterType", "none");
-      filter("filterKind", "annotation");
-      expect(ids()).toEqual(["B"]);
-    });
-
-    it("renders kind badge, heading and hides empty tag pill", () => {
+    it("renders heading and hides empty tag pill", () => {
       journal();
       const items = doc.querySelectorAll(".item");
-      expect(items[1].querySelector(".kind-badge")?.textContent).toBe("Annotation");
       expect(items[1].querySelector(".item-heading")?.textContent).toBe("Head");
       expect(items[1].querySelector(".pill")).toBeNull();
       expect(items[0].querySelector(".pill")?.textContent).toBe("debt");
     });
 
-    it("sends CHANGE_KIND from the Change to buttons", () => {
+    it("filters by 'No tag'", () => {
       journal();
-      const btns = [...doc.querySelectorAll(".action-btn")].filter((b) => b.textContent?.startsWith("Change to"));
-      expect(btns.map((b) => b.textContent)).toEqual([
-        "Change to annotation",
-        "Change to sticky",
-        "Change to annotation",
-      ]);
-      messages.length = 0;
-      (btns[1] as HTMLElement).click();
-      expect(messages).toContainEqual({ type: "CHANGE_KIND", id: "a1", kind: "sticky" });
+      const sel = doc.getElementById("filterType") as HTMLSelectElement;
+      sel.value = "none";
+      sel.dispatchEvent(new win.Event("change"));
+      expect([...doc.querySelectorAll(".item-note")].map((n) => n.textContent)).toEqual(["B"]);
+      expect(doc.getElementById("entryCount")?.textContent).toBe("1 of 2 entries");
     });
   });
 });

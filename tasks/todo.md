@@ -1,5 +1,7 @@
 # Sticky + Annotation kinds
 
+> **Annotation kind removed for now (2026-09-26).** Every entry is a sticky. The spec below is kept for when it comes back. Old entries saved with `kind` keep the field in storage; the plugin ignores it.
+
 Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annotation (handover).
 
 ## Spec
@@ -57,7 +59,7 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 - [x] 3. Add entry tab: kind selector, heading, "Note" label, author toggles (remembered)
 - [x] 4. View entries tab: kind filter, count, badge, Change to buttons, tests
 - [x] 5. Canvas sync: sticky note frames (create/update/delete), author options, avatar
-- [ ] 6. Canvas sync: native annotations (create/update/delete)
+- [ ] 6. Canvas sync: native annotations (create/update/delete). Built, then removed with the Annotation kind
 - [ ] 7. Export: grouped by kind, tests
 - [ ] 8. `npm run build`, `npm test`, changelog
 

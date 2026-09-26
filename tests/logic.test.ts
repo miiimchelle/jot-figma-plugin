@@ -9,7 +9,6 @@ import {
   cleanNote,
   generateEntryId,
   isEntryType,
-  isEntryKind,
   parseTag,
   parseAuthorDisplay,
   cleanHeading,
@@ -99,7 +98,6 @@ describe("parseJournal", () => {
       {
         id: "1",
         createdAt: "2025-01-01T00:00:00.000Z",
-        kind: "sticky",
         type: "decision",
         note: "test note",
       },
@@ -112,28 +110,12 @@ describe("parseJournal", () => {
     expect(parseJournal("")).toEqual([]);
   });
 
-  it("migrates entries without kind to sticky", () => {
-    const [e] = parseJournal(JSON.stringify([{ id: "1", createdAt: "x", type: "debt", note: "n" }]));
-    expect(e.kind).toBe("sticky");
-  });
-
-  it("keeps an existing annotation kind", () => {
-    const [e] = parseJournal(JSON.stringify([{ id: "1", createdAt: "x", kind: "annotation", note: "n" }]));
-    expect(e.kind).toBe("annotation");
-  });
-
   it("returns empty array for non-array JSON", () => {
     expect(parseJournal("{}")).toEqual([]);
   });
 });
 
-describe("isEntryKind / parseTag", () => {
-  it("validates kinds", () => {
-    expect(isEntryKind("sticky")).toBe(true);
-    expect(isEntryKind("annotation")).toBe(true);
-    expect(isEntryKind("decision")).toBe(false);
-  });
-
+describe("parseTag", () => {
   it("treats empty tag as none and rejects unknown tags", () => {
     expect(parseTag("")).toBeUndefined();
     expect(parseTag(undefined)).toBeUndefined();
@@ -214,15 +196,9 @@ describe("filterEntries", () => {
     expect(filterEntries(entries, "all")).toEqual(entries);
   });
 
-  it("filters by kind and tag together", () => {
-    const mixed = [
-      { ...entries[0], kind: "annotation" },
-      { ...entries[2], kind: "sticky" },
-    ] as JournalEntry[];
-    expect(filterEntries(mixed, "all", "annotation").map((e) => e.id)).toEqual(["1"]);
-    expect(filterEntries(mixed, "decision", "sticky").map((e) => e.id)).toEqual(["3"]);
-    const untagged = { id: "5", createdAt: "x", kind: "sticky", note: "n" } as JournalEntry;
-    expect(filterEntries([...mixed, untagged], "none").map((e) => e.id)).toEqual(["5"]);
+  it("filters untagged entries with 'none'", () => {
+    const untagged = { id: "5", createdAt: "x", note: "n" } as JournalEntry;
+    expect(filterEntries([...entries, untagged], "none").map((e) => e.id)).toEqual(["5"]);
   });
 
   it("filters by decision", () => {
@@ -457,7 +433,7 @@ describe("constants", () => {
 });
 
 describe("sticky layout", () => {
-  const base = { id: "1", createdAt: "2025-09-29T10:00:00Z", kind: "sticky", note: "N", author: { name: "Luis" } } as JournalEntry;
+  const base = { id: "1", createdAt: "2025-09-29T10:00:00Z", note: "N", author: { name: "Luis" } } as JournalEntry;
 
   it("formats dates as '29 September 2025'", () => {
     expect(formatStickyDate("2025-09-29T10:00:00Z")).toBe("29 September 2025");

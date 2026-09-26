@@ -204,13 +204,13 @@ export async function removeSticky(entry: JournalEntry): Promise<void> {
 
 /**
  * Create or rebuild the sticky for an entry. Returns the sticky id, or undefined
- * when the entry is not a sticky or has no linked layer (existing sticky removed).
+ * when the entry has no linked layer (existing sticky removed).
  */
 export async function syncSticky(entry: JournalEntry): Promise<string | undefined> {
   const existing = await liveNode(entry.stickyNodeId);
   const target = await liveNode(entry.nodeId);
 
-  if (entry.kind !== "sticky" || !target) {
+  if (!target) {
     if (existing) existing.remove();
     return undefined;
   }

@@ -7,7 +7,6 @@ import {
   toMarkdown,
   cleanNote,
   generateEntryId,
-  isEntryKind,
   parseTag,
   cleanHeading,
   parseAuthorDisplay,
@@ -136,7 +135,6 @@ function handleResize(msg: { width: number; height: number }) {
 }
 
 type EntryInput = {
-  kind?: unknown;
   entryType?: unknown;
   heading?: unknown;
   note: unknown;
@@ -148,10 +146,7 @@ function parseEntryInput(msg: EntryInput) {
   if (!note) { err("Write a note first."); return null; }
   const type = parseTag(msg.entryType);
   if (type === null) { err("Unknown entry type."); return null; }
-  const kind = msg.kind === undefined ? "sticky" : msg.kind;
-  if (!isEntryKind(kind)) { err("Unknown entry kind."); return null; }
   return {
-    kind,
     type,
     heading: cleanHeading(msg.heading),
     note,
@@ -189,28 +184,12 @@ async function handleUpdateEntry(msg: EntryInput & { id: string }) {
   entries[idx] = {
     ...entries[idx],
     ...input,
-    kind: msg.kind === undefined ? entries[idx].kind : input.kind,
     updatedAt: new Date().toISOString(),
   };
 
   setJournal(entries);
   sendJournal(entries);
   figma.notify("Updated entry");
-  await syncCanvas(entries[idx]);
-}
-
-async function handleChangeKind(msg: { id: string; kind: unknown }) {
-  if (!isEntryKind(msg.kind)) { err("Unknown entry kind."); return; }
-
-  const entries = getJournal();
-  const idx = entries.findIndex((e) => e.id === msg.id);
-  if (idx === -1) { err("Entry not found."); return; }
-
-  entries[idx] = { ...entries[idx], kind: msg.kind, updatedAt: new Date().toISOString() };
-
-  setJournal(entries);
-  sendJournal(entries);
-  figma.notify(msg.kind === "annotation" ? "Changed to annotation" : "Changed to sticky");
   await syncCanvas(entries[idx]);
 }
 
@@ -232,9 +211,9 @@ async function handleDeleteEntry(msg: { id: string }) {
 
 // documentAccess: "dynamic-page" requires the async node/page APIs.
 async function handleGoToEntry(msg: { id?: string; nodeId?: string }) {
-  // Stickies jump to their note on canvas, falling back to the linked layer.
+  // Jump to the sticky on canvas, falling back to the linked layer.
   const entry = msg.id ? getJournal().find((e) => e.id === msg.id) : undefined;
-  const stickyId = entry?.kind === "sticky" ? entry.stickyNodeId : undefined;
+  const stickyId = entry?.stickyNodeId;
   const sticky = stickyId ? await figma.getNodeByIdAsync(stickyId) : null;
   const targetId = sticky && !sticky.removed ? stickyId : (entry?.nodeId ?? msg.nodeId);
   if (!targetId) return;
@@ -272,7 +251,6 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   ADD_ENTRY: handleAddEntry,
   UPDATE_ENTRY: handleUpdateEntry,
   DELETE_ENTRY: handleDeleteEntry,
-  CHANGE_KIND: handleChangeKind,
   GO_TO_ENTRY: handleGoToEntry,
   EXPORT_MD: handleExportMd,
 };
