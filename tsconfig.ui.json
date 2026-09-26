@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["ui/**/*.ts", "ui/**/*.tsx", "logic.ts", "tests/ui.test.tsx", "tests/setup.ts", "tests/css-check.test.ts"]
+  "include": ["ui/**/*.ts", "ui/**/*.tsx", "logic.ts", "tests/ui.test.tsx", "tests/setup.ts", "tests/css-check.test.ts", "tests/theme.test.ts"]
 }
