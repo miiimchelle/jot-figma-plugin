@@ -3,4 +3,6 @@ dist/
 .DS_Store
 *.log
 .vscode/
-.idea/  
+.idea/
+test-results/
+playwright-report/

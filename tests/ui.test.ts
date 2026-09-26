@@ -581,7 +581,7 @@ describe("UI", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Tab switch (RESIZE is only sent when content height grows, not on every switch)
+  // Tab switch
   // -----------------------------------------------------------------------
   describe("Tab switch", () => {
     it("shows View panel when switching to View tab", () => {
@@ -665,6 +665,56 @@ describe("UI", () => {
 
       const goMsg = messages.find((m) => m.type === "GO_TO_ENTRY");
       expect(goMsg).toBeUndefined();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // HTML escaping
+  // -----------------------------------------------------------------------
+  describe("HTML escaping", () => {
+    it("renders note and layer names as text, not markup", () => {
+      simulatePluginMessage(win, {
+        type: "JOURNAL",
+        entries: [
+          { id: "1", createdAt: "2025-01-01", type: "decision", note: "<img src=x onerror=alert(1)>", pageName: "<b>P</b>", nodeName: "N" },
+        ],
+      });
+
+      const item = doc.querySelector(".item") as HTMLElement;
+      expect(item.querySelector("img")).toBeNull();
+      expect(item.querySelector(".linked b")).toBeNull();
+      expect(item.querySelector(".item-note")?.textContent).toBe("<img src=x onerror=alert(1)>");
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Auto-resize
+  // -----------------------------------------------------------------------
+  describe("Auto-resize", () => {
+    const setHeight = (h: number) =>
+      Object.defineProperty(doc.body, "scrollHeight", { value: h, configurable: true });
+    const lastResize = () => messages.filter((m) => m?.type === "RESIZE").pop();
+
+    it("shrinks when content gets shorter", () => {
+      setHeight(676);
+      simulatePluginMessage(win, { type: "ERROR", message: "x" });
+      expect(lastResize().height).toBe(700);
+
+      setHeight(476);
+      simulatePluginMessage(win, { type: "ERROR", message: "" });
+      expect(lastResize().height).toBe(500);
+    });
+
+    it("stops auto-resizing after the user drags the handle", () => {
+      const handle = doc.getElementById("resizeHandle") as HTMLElement;
+      handle.dispatchEvent(new win.MouseEvent("mousedown", { clientY: 0 }));
+      doc.dispatchEvent(new win.MouseEvent("mousemove", { clientY: 100 }));
+      doc.dispatchEvent(new win.MouseEvent("mouseup"));
+      const count = messages.filter((m) => m?.type === "RESIZE").length;
+
+      setHeight(676);
+      simulatePluginMessage(win, { type: "ERROR", message: "x" });
+      expect(messages.filter((m) => m?.type === "RESIZE").length).toBe(count);
     });
   });
 
