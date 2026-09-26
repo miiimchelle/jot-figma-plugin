@@ -84,9 +84,9 @@ describe("sticky colours and pill", () => {
     expect(mock.api.createNodeFromSvg).not.toHaveBeenCalled();
   });
 
-  it("keeps yellow and no pill when untagged", async () => {
+  it("uses neutral grey and no pill when untagged", async () => {
     const sticky = mock.nodes.get((await syncSticky(entry()))!)!;
-    expect(fill(sticky)).toEqual({ r: 0xfd / 255, g: 0xf1 / 255, b: 0xc9 / 255 });
+    expect(fill(sticky)).toEqual({ r: 0xf4 / 255, g: 0xf4 / 255, b: 0xf5 / 255 });
     expect(mock.texts(sticky)[0]).toBe("Colour and typography");
   });
 });

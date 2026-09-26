@@ -176,10 +176,11 @@ export const TAG_LABELS: Record<EntryType, string> = {
 export type StickyPalette = { body: string; footer: string; ink: string; border: string };
 
 export const UNTAGGED_PALETTE: StickyPalette = {
-  body: "#FDF1C9",
-  footer: "#FEFAEB",
-  ink: "#4A2511",
-  border: "#4A2511",
+  // Neutral grey, same steps as the tag palettes (100 body, 50 footer, 700 text, 300 border).
+  body: "#F4F4F5",
+  footer: "#FAFAFA",
+  ink: "#3F3F46",
+  border: "#D4D4D8",
 };
 
 export const TAG_PALETTES: Record<EntryType, StickyPalette> = {

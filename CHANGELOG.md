@@ -6,6 +6,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Untagged stickies use neutral grey instead of yellow
 - Rich text notes: bold, italic, bullet and numbered lists, and links, from a toolbar in the Note editor (Tiptap). Notes are stored as Markdown, so older plain notes and the Markdown export keep working
 - Formatting shows on Entries rows and on canvas stickies (Figma bold/italic styles, native lists, hyperlinks). Links in Entries open via the plugin
 
