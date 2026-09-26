@@ -9,7 +9,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - —
 
 ### Changed
-- —
+- Entries rows use a 4px-grid rhythm: 16px row padding, 8px between the date, content, "Linked to" line and buttons, 4px between heading and note
 
 ### Fixed
 - —

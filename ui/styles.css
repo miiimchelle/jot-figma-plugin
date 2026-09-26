@@ -71,7 +71,7 @@ body { overflow: hidden; }
   content: attr(data-placeholder); position: absolute; top: 8px; left: 8px;
   color: var(--figma-color-text-tertiary); pointer-events: none;
 }
-.note-body p, .entry-note .note-p { margin: 0 0 6px; }
+.note-body p, .entry-note .note-p { margin: 0 0 8px; }
 .note-body p:last-child, .entry-note > :last-child { margin-bottom: 0; }
 .note-body ul, .note-body ol { margin: 0 0 6px; padding-left: 20px; }
 .note-body li > p { margin: 0; }
@@ -87,24 +87,26 @@ body { overflow: hidden; }
 .entry-count { color: var(--figma-color-text-secondary); white-space: nowrap; }
 
 .entry-list { flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid var(--figma-color-border); }
+/* Row rhythm on a 4px grid: 16px row padding, 8px between blocks (date, content, link, actions),
+   4px inside the content block (heading, note, list items). */
 .entry {
-  padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px;
   border-bottom: 1px solid var(--figma-color-border);
 }
 .entry:last-child { border-bottom: none; }
 .entry.clickable { cursor: pointer; }
 .entry.clickable:hover { background: var(--figma-color-bg-hover); }
 .entry.clickable:focus-visible { outline: 2px solid var(--figma-color-border-selected); outline-offset: -2px; }
-.entry-meta {
-  display: flex; align-items: center; gap: 6px;
-  color: var(--figma-color-text-secondary); margin-bottom: 4px;
-}
-.entry-heading { font-weight: 600; margin-bottom: 2px; }
+.entry-meta { display: flex; align-items: center; gap: 8px; color: var(--figma-color-text-secondary); }
+.entry-content { display: flex; flex-direction: column; gap: 4px; }
+.entry-heading { font-weight: 600; }
 .entry-note { white-space: pre-wrap; overflow-wrap: anywhere; }
-.entry-note .note-li { position: relative; margin-bottom: 2px; }
+.entry-note .note-li { position: relative; margin-bottom: 4px; }
+.entry-note > :last-child { margin-bottom: 0; }
 .entry-note .note-marker { position: absolute; margin-left: -14px; color: var(--figma-color-text-secondary); }
-.entry-linked { color: var(--figma-color-text-secondary); margin-top: 4px; overflow-wrap: anywhere; }
-.entry-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; cursor: default; }
+.entry-linked { color: var(--figma-color-text-secondary); overflow-wrap: anywhere; }
+.entry-actions { display: flex; flex-wrap: wrap; gap: 8px; cursor: default; }
 
 .pill {
   display: inline-block; padding: 0 6px; border-radius: 4px;
