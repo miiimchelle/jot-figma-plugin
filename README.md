@@ -38,6 +38,8 @@ npm run watch
 
 Then load the plugin in Figma via **Plugins > Development > Import plugin from manifest**.
 
+`npm run build` writes `dist/code.js` (plugin, from `code.ts`) and `dist/ui.html` (UI, from `ui/`). The UI is Preact with [`@create-figma-plugin/ui`](https://yuanqing.github.io/create-figma-plugin/ui/) components, so it follows Figma's own look in light and dark mode.
+
 ### File linking (optional)
 
 In the **Setup** tab, paste your Figma file URL to enable clickable deep links in Markdown exports. This is stored per file — you only need to do it once.

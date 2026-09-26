@@ -1,0 +1,86 @@
+/* Layout and Jot-specific pieces. Controls come from @create-figma-plugin/ui. */
+:root {
+  --pill-decision-bg: #dbeafe; --pill-decision-fg: #1d4ed8;
+  --pill-assumption-bg: #fef3c7; --pill-assumption-fg: #b45309;
+  --pill-tradeoff-bg: #ede9fe; --pill-tradeoff-fg: #5b21b6;
+  --pill-feedback-bg: #d1fae5; --pill-feedback-fg: #047857;
+  --pill-debt-bg: #fee2e2; --pill-debt-fg: #b91c1c;
+}
+.figma-dark {
+  --pill-decision-bg: #1e2a44; --pill-decision-fg: #93c5fd;
+  --pill-assumption-bg: #3a2c12; --pill-assumption-fg: #fcd34d;
+  --pill-tradeoff-bg: #2e2447; --pill-tradeoff-fg: #c4b5fd;
+  --pill-feedback-bg: #12352a; --pill-feedback-fg: #6ee7b7;
+  --pill-debt-bg: #3f1d1d; --pill-debt-fg: #fca5a5;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--figma-color-text);
+  background: var(--figma-color-bg);
+}
+
+.app { display: flex; flex-direction: column; }
+
+.panel { padding-top: 12px; padding-bottom: 12px; }
+
+.error { padding: 8px 16px 0; }
+
+/* Form rows */
+.field { margin-bottom: 12px; }
+.field-label { font-weight: 500; color: var(--figma-color-text); margin-bottom: 4px; }
+.field-hint { color: var(--figma-color-text-secondary); margin-bottom: 6px; }
+.toggle-row { display: flex; gap: 16px; }
+.button-stack { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.setup-status { color: var(--figma-color-text-success); margin: 8px 0 4px; }
+
+/* Entries: toolbar, flat rows with dividers, footer */
+.toolbar { display: flex; align-items: center; gap: 8px; padding: 0 16px 8px; }
+.toolbar-filter { flex: 1; min-width: 0; }
+.entry-count { color: var(--figma-color-text-secondary); white-space: nowrap; }
+
+.entry-list { border-top: 1px solid var(--figma-color-border); }
+.entry {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--figma-color-border);
+}
+.entry.clickable { cursor: pointer; }
+.entry.clickable:hover { background: var(--figma-color-bg-hover); }
+.entry.clickable:focus-visible { outline: 2px solid var(--figma-color-border-selected); outline-offset: -2px; }
+.entry-meta {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--figma-color-text-secondary); margin-bottom: 4px;
+}
+.entry-heading { font-weight: 600; margin-bottom: 2px; }
+.entry-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+.entry-linked { color: var(--figma-color-text-secondary); margin-top: 4px; overflow-wrap: anywhere; }
+.entry-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; cursor: default; }
+
+.pill {
+  display: inline-block; padding: 0 6px; border-radius: 4px;
+  font-size: 10px; line-height: 16px; font-weight: 500;
+}
+.pill--decision { background: var(--pill-decision-bg); color: var(--pill-decision-fg); }
+.pill--assumption { background: var(--pill-assumption-bg); color: var(--pill-assumption-fg); }
+.pill--tradeoff { background: var(--pill-tradeoff-bg); color: var(--pill-tradeoff-fg); }
+.pill--feedback { background: var(--pill-feedback-bg); color: var(--pill-feedback-fg); }
+.pill--debt { background: var(--pill-debt-bg); color: var(--pill-debt-fg); }
+
+.empty-state { padding: 24px 16px; text-align: center; color: var(--figma-color-text-secondary); }
+.empty-state-title { font-weight: 600; color: var(--figma-color-text); margin-bottom: 4px; }
+
+.footer { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 0; }
+.footer-buttons { display: flex; gap: 8px; }
+
+.resize-handle {
+  height: 12px; margin-top: 12px; cursor: ns-resize;
+  display: flex; align-items: center; justify-content: center;
+  border-top: 1px solid var(--figma-color-border);
+}
+.resize-handle::before {
+  content: ""; width: 24px; height: 3px; border-radius: 2px;
+  background: var(--figma-color-icon-tertiary, var(--figma-color-border-strong));
+}

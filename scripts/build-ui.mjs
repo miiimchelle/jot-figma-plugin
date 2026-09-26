@@ -1,0 +1,64 @@
+// Bundles ui/main.tsx and inlines the JS and CSS into dist/ui.html (Figma plugins load one HTML file).
+// Usage: node scripts/build-ui.mjs [--watch]
+import * as esbuild from "esbuild";
+import { mkdirSync, writeFileSync } from "fs";
+import path from "path";
+
+const OUT = "dist/ui.html";
+
+// @create-figma-plugin/ui imports its global CSS as "!../css/base.css".
+const globalCss = {
+  name: "global-css",
+  setup(build) {
+    build.onResolve({ filter: /^!/ }, (args) => ({ path: path.resolve(args.resolveDir, args.path.slice(1)) }));
+  },
+};
+
+const inlineHtml = {
+  name: "inline-html",
+  setup(build) {
+    build.onEnd((result) => {
+      if (result.errors.length) return;
+      const file = (ext) => result.outputFiles.find((f) => f.path.endsWith(ext))?.text ?? "";
+      // Keep a literal </script> inside the bundle from closing the tag.
+      const js = file(".js").replace(/<\/script/gi, "<\\/script");
+      const html = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>${file(".css")}</style>
+</head>
+<body>
+<div id="root"></div>
+<script>${js}</script>
+</body>
+</html>
+`;
+      mkdirSync(path.dirname(OUT), { recursive: true });
+      writeFileSync(OUT, html);
+      console.log(`Built ${OUT} (${(html.length / 1024).toFixed(1)} KB)`);
+    });
+  },
+};
+
+const options = {
+  entryPoints: ["ui/main.tsx"],
+  bundle: true,
+  write: false,
+  outdir: "dist/ui-build",
+  format: "iife",
+  target: "es2017",
+  minify: true,
+  jsx: "automatic",
+  jsxImportSource: "preact",
+  loader: { ".module.css": "local-css", ".css": "css" },
+  plugins: [globalCss, inlineHtml],
+  logLevel: "warning",
+};
+
+if (process.argv.includes("--watch")) {
+  const ctx = await esbuild.context(options);
+  await ctx.watch();
+} else {
+  await esbuild.build(options);
+}

@@ -9,7 +9,9 @@ This project follows [Semantic Versioning](https://semver.org/).
 - —
 
 ### Changed
-- —
+- Plugin UI rebuilt with Figma-native components (`@create-figma-plugin/ui`, Preact): Figma tabs (Write, Entries, Settings), dropdowns, text fields, checkboxes and buttons, flat entry rows with dividers, warning banner for errors. Follows Figma light and dark themes
+- Settings moved from the gear button to a Settings tab; the entry count moved from the tab label into the Entries panel
+- UI source now lives in `ui/` and builds to `dist/ui.html`; UI tests are component tests (`@testing-library/preact`)
 
 ### Fixed
 - —

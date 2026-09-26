@@ -1,6 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
 
+// Loads the built UI (dist/ui.html) in an iframe; run `npm run build` first.
 const HARNESS = "/tests/e2e/harness.html";
+
+const outbound = (page: Page) => page.evaluate(() => (window as any).__harnessOutbound as { type: string }[]);
+const sendToUi = (page: Page, msg: object) => page.evaluate((m) => (window as any).__harnessSend(m), msg);
 
 test.describe("Jot UI e2e", () => {
   test.beforeEach(async ({ page }) => {
@@ -8,107 +12,46 @@ test.describe("Jot UI e2e", () => {
     await page.waitForFunction(() => (window as any).__harnessReady === true, { timeout: 5000 });
   });
 
-  test("renders heading and tabs", async ({ page }) => {
+  test("renders Figma-style tabs with Write open", async ({ page }) => {
     const frame = page.frameLocator("#plugin-frame");
-    await expect(frame.locator("h1")).toHaveText("Jot");
-    await expect(frame.locator(".tagline")).toContainText("Capture design decisions");
-    await expect(frame.locator(".tabs-trigger")).toHaveCount(2);
-  });
-
-  test("Write tab is active by default", async ({ page }) => {
-    const frame = page.frameLocator("#plugin-frame");
-    await expect(frame.locator("#tabWrite")).toHaveAttribute("data-state", "active");
-    await expect(frame.locator("#panelWrite")).toHaveClass(/active/);
-  });
-
-  test("switches to View tab and requests journal", async ({ page }) => {
-    const frame = page.frameLocator("#plugin-frame");
-    await frame.locator("#tabView").click();
-    await expect(frame.locator("#tabView")).toHaveAttribute("data-state", "active");
-    await expect(frame.locator("#panelView")).toHaveClass(/active/);
-
-    const outbound = await page.evaluate(() => (window as any).__harnessOutbound);
-    const getJournal = outbound.find((m: { type: string }) => m.type === "GET_JOURNAL");
-    expect(getJournal).toBeDefined();
+    for (const tab of ["Write", "Entries", "Settings"]) await expect(frame.getByText(tab, { exact: true })).toBeVisible();
+    await expect(frame.locator("#note")).toBeVisible();
   });
 
   test("save entry sends ADD_ENTRY", async ({ page }) => {
     const frame = page.frameLocator("#plugin-frame");
     await frame.locator("#note").fill("E2E test note");
-    await frame.locator("#save").click();
+    await frame.getByText("Save entry").click();
 
-    const outbound = await page.evaluate(() => (window as any).__harnessOutbound);
-    const addEntry = outbound.find((m: { type: string }) => m.type === "ADD_ENTRY");
-    expect(addEntry).toBeDefined();
-    expect(addEntry.note).toBe("E2E test note");
-    expect(addEntry.entryType).toBe("decision");
+    const add = (await outbound(page)).find((m) => m.type === "ADD_ENTRY") as any;
+    expect(add).toMatchObject({ note: "E2E test note", entryType: "decision" });
   });
 
-  test("view tab shows entries when JOURNAL received", async ({ page }) => {
+  test("Entries shows the journal and exports Markdown", async ({ page }) => {
     const frame = page.frameLocator("#plugin-frame");
-    await frame.locator("#tabView").click();
-
-    await page.evaluate(() => {
-      (window as any).__harnessSend({
-        type: "JOURNAL",
-        entries: [
-          {
-            id: "e1",
-            createdAt: "2025-01-01T00:00:00Z",
-            type: "decision",
-            note: "E2E journal entry",
-            pageName: "Page 1",
-            nodeName: "Frame",
-          },
-        ],
-      });
+    await frame.getByText("Entries", { exact: true }).click();
+    await sendToUi(page, {
+      type: "JOURNAL",
+      entries: [{ id: "e1", createdAt: "2025-01-01T00:00:00Z", type: "decision", note: "E2E journal entry", pageName: "Page 1", nodeName: "Frame", nodeId: "1:2" }],
     });
+    await expect(frame.locator(".entry")).toHaveCount(1);
+    await expect(frame.locator(".entry")).toContainText("E2E journal entry");
+    await expect(frame.locator(".pill")).toHaveText("Decision");
 
-    await expect(frame.locator(".item")).toHaveCount(1);
-    await expect(frame.locator(".item")).toContainText("E2E journal entry");
-    await expect(frame.locator(".item")).toContainText("decision");
-  });
-
-  test("settings panel and file key", async ({ page }) => {
-    const frame = page.frameLocator("#plugin-frame");
-    await frame.locator("#tabSettings").click();
-    await expect(frame.locator("#panelSettings")).toHaveClass(/active/);
-
-    const outboundBefore = await page.evaluate(() => (window as any).__harnessOutbound.slice());
-    const getKey = outboundBefore.find((m: { type: string }) => m.type === "GET_FILE_KEY");
-    expect(getKey).toBeDefined();
-
-    await frame.locator("#fileUrlInput").fill("https://www.figma.com/design/ABC123/Project");
-    await frame.locator("#saveFileKey").click();
-
-    const outbound = await page.evaluate(() => (window as any).__harnessOutbound);
-    const setKey = outbound.find((m: { type: string }) => m.type === "SET_FILE_KEY");
-    expect(setKey).toBeDefined();
-    expect(setKey.fileKey).toBe("ABC123");
-  });
-
-  test("export sends EXPORT_MD", async ({ page }) => {
-    const frame = page.frameLocator("#plugin-frame");
-    await frame.locator("#tabView").click();
-    await frame.locator("#export").click();
-
-    const outbound = await page.evaluate(() => (window as any).__harnessOutbound);
-    const exportMd = outbound.find((m: { type: string }) => m.type === "EXPORT_MD");
-    expect(exportMd).toBeDefined();
-  });
-
-  test("export result shows markdown and copy button", async ({ page }) => {
-    const frame = page.frameLocator("#plugin-frame");
-    await frame.locator("#tabView").click();
-    await page.evaluate(() => {
-      (window as any).__harnessSend({
-        type: "EXPORT_MD_RESULT",
-        markdown: "# Jot\nTest export content",
-      });
-    });
-
-    await expect(frame.locator("#md")).toBeVisible();
+    await frame.getByText("Export Markdown").click();
+    expect((await outbound(page)).some((m) => m.type === "EXPORT_MD")).toBe(true);
+    await sendToUi(page, { type: "EXPORT_MD_RESULT", markdown: "# Jot\nTest export content" });
     await expect(frame.locator("#md")).toHaveValue("# Jot\nTest export content");
-    await expect(frame.locator("#copyMd")).toBeVisible();
+    await expect(frame.getByText("Copy to clipboard")).toBeVisible();
+  });
+
+  test("Settings saves the file key", async ({ page }) => {
+    const frame = page.frameLocator("#plugin-frame");
+    await frame.getByText("Settings", { exact: true }).click();
+    await frame.locator("#fileUrlInput").fill("https://www.figma.com/design/ABC123/Project");
+    await frame.getByText("Save", { exact: true }).click();
+
+    const set = (await outbound(page)).find((m) => m.type === "SET_FILE_KEY") as any;
+    expect(set?.fileKey).toBe("ABC123");
   });
 });
