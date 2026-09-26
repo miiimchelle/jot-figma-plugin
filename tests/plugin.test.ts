@@ -457,13 +457,22 @@ describe("Plugin message handling", () => {
     });
   });
 
-  describe("RESIZE", () => {
-    it("calls figma.ui.resize with dimensions", async () => {
+  describe("OPEN_URL", () => {
+    it("opens http(s) and mailto links only", async () => {
+      const { handler, figma } = await loadPlugin();
+      (figma as any).openExternal = vi.fn();
+      handler({ type: "OPEN_URL", url: "https://x.io" });
+      handler({ type: "OPEN_URL", url: "javascript:alert(1)" });
+      handler({ type: "OPEN_URL", url: 42 });
+      expect((figma as any).openExternal.mock.calls).toEqual([["https://x.io"]]);
+    });
+  });
+
+  describe("Window size", () => {
+    it("ignores RESIZE (fixed window)", async () => {
       const { handler, resize } = await loadPlugin();
-
       handler({ type: "RESIZE", width: 400, height: 600 });
-
-      expect(resize).toHaveBeenCalledWith(400, 600);
+      expect(resize).not.toHaveBeenCalled();
     });
   });
 
@@ -537,7 +546,7 @@ describe("Plugin message handling", () => {
       const { figma } = await loadPlugin();
       expect(figma.showUI).toHaveBeenCalledWith("<html></html>", {
         width: 360,
-        height: 520,
+        height: 720,
         themeColors: true,
       });
     });

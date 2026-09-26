@@ -18,20 +18,23 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [v2.1.0] - 2026-09-26
 ### Added
-- Optional heading and author display options (avatar, name, timestamp) per entry
-- Tags are now optional ("No tag" option)
-- Add entry: heading field, avatar/name/timestamp toggles remembered per user
-- View entries: "No tag" filter, heading shown on cards
-- Colour coding by tag on canvas stickies (Decision blue, Assumption amber, Trade-off purple, Feedback green, Design debt red), with an all-caps tag pill above the heading. Untagged stays yellow. No icon
-- View entries: unlinked notes get "Link to selection"; linked notes get "Change link" (moves the note and its sticky to the selected layer) and "Unlink" (removes the link and sticky, keeps the note)
-- Several notes on one layer: their stickies stack in a column to the right of the layer, 16px apart, re-stacked on add, edit, link, unlink and delete. Stickies moved out of the column are left alone
-- Pills show readable labels ("Trade-off", "Design debt")
-- Sticky notes on canvas: every entry with a linked layer gets one, drawn 24px right of the layer, rebuilt on edit (keeping a moved position), removed on delete. Avatar falls back to initials
+- Sticky notes on canvas: every linked entry gets one, 24px right of its layer, rebuilt on edit (keeping a moved position) and removed on delete
+- Colour coding by tag on stickies (Decision blue, Assumption amber, Trade-off purple, Feedback green, Design debt red) with an all-caps tag pill above the heading. Untagged stickies are neutral grey
+- Several notes on one layer stack in a column beside it, 16px apart, and re-stack on add, edit, link, unlink and delete. Stickies moved out of the column are left alone
+- Rich text notes: bold, italic, bullet and numbered lists, and links from a toolbar (Tiptap). Stored as Markdown, so older plain notes and the Markdown export keep working. Formatting shows on Entries rows and on stickies (Figma font styles, native lists, hyperlinks)
+- Optional heading, and author options for stickies (avatar, name, timestamp) remembered per user. Avatar falls back to initials
+- Tags are optional ("No tag"), with a "No tag" filter
+- Entries: "Link to selection" for unlinked notes; "Change link" (moves the note and its sticky to the selected layer) and "Unlink" (removes the link and sticky, keeps the note) for linked ones
+- Links in notes open in the browser via the plugin (http, https and mailto only)
 
 ### Changed
-- Manifest: `currentuser` permission, network access limited to `*.figma.com` (avatar only)
-- UI follows Figma's light and dark theme (`themeColors`), Inter font
-- Add entry: "Entry type" renamed to "Tag", "Decision note" renamed to "Note"
+- Plugin UI rebuilt with Figma-native components (`@create-figma-plugin/ui`, Preact): tabs (Write, Entries, Settings), dropdowns, text fields, checkboxes, buttons, flat entry rows and a warning banner for errors. Follows Figma's light and dark theme
+- Settings moved from the gear button to a Settings tab; the entry count moved from the tab label into the Entries panel
+- Fixed 360 × 720 window: auto-resize and the drag handle are gone. On Entries the filter row with "Export markdown" stays put and only the list scrolls
+- Write tab: the Note editor fills the window and Save (with Cancel edit) is pinned to the bottom
+- Pills show readable labels ("Trade-off", "Design debt"); "Entry type" is now "Tag" and "Decision note" is now "Note"
+- Manifest: `currentuser` permission, network access limited to `*.figma.com` (avatar only), UI loads from `dist/ui.html`
+- UI source lives in `ui/` and builds to `dist/ui.html`; UI tests are component tests (`@testing-library/preact`)
 
 ### Removed
 - Annotation entry kind (built, then removed before release). Entries saved with a `kind` field still load as normal notes

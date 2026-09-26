@@ -4,12 +4,14 @@
   "description": "A lightweight design decision journal for Figma",
   "main": "code.js",
   "scripts": {
-    "build": "esbuild code.ts --bundle --outfile=dist/code.js --format=iife --target=es2017",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint --ext .ts,.tsx --ignore-pattern node_modules .",
-    "lint:fix": "eslint --ext .ts,.tsx --ignore-pattern node_modules --fix .",
-    "dev": "esbuild code.ts --bundle --outfile=dist/code.js --format=iife --target=es2017 --watch",
-    "watch": "esbuild code.ts --bundle --outfile=dist/code.js --format=iife --target=es2017 --watch",
+    "build": "npm run build:code && npm run build:ui",
+    "build:code": "esbuild code.ts --bundle --outfile=dist/code.js --format=iife --target=es2017",
+    "build:ui": "node scripts/build-ui.mjs",
+    "dev": "node scripts/build-ui.mjs --watch & esbuild code.ts --bundle --outfile=dist/code.js --format=iife --target=es2017 --watch",
+    "watch": "node scripts/build-ui.mjs --watch & esbuild code.ts --bundle --outfile=dist/code.js --format=iife --target=es2017 --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.ui.json --noEmit",
+    "lint": "eslint --ext .ts,.tsx --ignore-pattern node_modules --ignore-pattern dist .",
+    "lint:fix": "eslint --ext .ts,.tsx --ignore-pattern node_modules --ignore-pattern dist --fix .",
     "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest",
@@ -21,6 +23,7 @@
     "@figma/eslint-plugin-figma-plugins": "*",
     "@figma/plugin-typings": "^1.121.0",
     "@playwright/test": "^1.58.2",
+    "@testing-library/preact": "^3.2.4",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
     "@typescript-eslint/parser": "^6.12.0",
     "@vitest/coverage-v8": "^4.0.18",
@@ -39,7 +42,10 @@
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-      "project": "./tsconfig.json"
+      "project": [
+        "./tsconfig.json",
+        "./tsconfig.ui.json"
+      ]
     },
     "root": true,
     "rules": {
@@ -52,5 +58,13 @@
         }
       ]
     }
+  },
+  "dependencies": {
+    "@create-figma-plugin/ui": "^4.0.3",
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/markdown": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
+    "preact": "^10.29.8"
   }
 }

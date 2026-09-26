@@ -130,10 +130,6 @@ async function handleSetPrefs(msg: { display: unknown }) {
   await figma.clientStorage.setAsync(PREFS_STORAGE, { display: parseAuthorDisplay(msg.display) });
 }
 
-function handleResize(msg: { width: number; height: number }) {
-  figma.ui.resize(msg.width, msg.height);
-}
-
 type EntryInput = {
   entryType?: unknown;
   heading?: unknown;
@@ -283,6 +279,11 @@ async function handleGoToEntry(msg: { id?: string; nodeId?: string }) {
   }
 }
 
+// Links in notes; plugin UIs can't navigate themselves.
+function handleOpenUrl(msg: { url: unknown }) {
+  if (typeof msg.url === "string" && /^(https?:|mailto:)/i.test(msg.url)) figma.openExternal(msg.url);
+}
+
 function handleExportMd() {
   post({ type: "EXPORT_MD_RESULT", markdown: toMarkdown(getJournal(), fileKey()) });
 }
@@ -295,7 +296,6 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   GET_JOURNAL: handleGetJournal,
   GET_FILE_KEY: handleGetFileKey,
   SET_FILE_KEY: handleSetFileKey,
-  RESIZE: handleResize,
   GET_PREFS: handleGetPrefs,
   SET_PREFS: handleSetPrefs,
   ADD_ENTRY: handleAddEntry,
@@ -305,13 +305,15 @@ const handlers: Record<string, (msg: any) => void | Promise<void>> = {
   UNLINK_ENTRY: handleUnlinkEntry,
   GO_TO_ENTRY: handleGoToEntry,
   EXPORT_MD: handleExportMd,
+  OPEN_URL: handleOpenUrl,
 };
 
 // ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
 
-figma.showUI(__html__, { width: 360, height: 520, themeColors: true });
+// Fixed size: the UI fills this window and scrolls inside it.
+figma.showUI(__html__, { width: 360, height: 720, themeColors: true });
 sendFileKey();
 
 figma.ui.onmessage = async (msg) => {

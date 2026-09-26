@@ -1,0 +1,122 @@
+/* Layout and Jot-specific pieces. Controls come from @create-figma-plugin/ui. */
+:root {
+  --pill-decision-bg: #dbeafe; --pill-decision-fg: #1d4ed8;
+  --pill-assumption-bg: #fef3c7; --pill-assumption-fg: #b45309;
+  --pill-tradeoff-bg: #ede9fe; --pill-tradeoff-fg: #5b21b6;
+  --pill-feedback-bg: #d1fae5; --pill-feedback-fg: #047857;
+  --pill-debt-bg: #fee2e2; --pill-debt-fg: #b91c1c;
+}
+.figma-dark {
+  --pill-decision-bg: #1e2a44; --pill-decision-fg: #93c5fd;
+  --pill-assumption-bg: #3a2c12; --pill-assumption-fg: #fcd34d;
+  --pill-tradeoff-bg: #2e2447; --pill-tradeoff-fg: #c4b5fd;
+  --pill-feedback-bg: #12352a; --pill-feedback-fg: #6ee7b7;
+  --pill-debt-bg: #3f1d1d; --pill-debt-fg: #fca5a5;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--figma-color-text);
+  background: var(--figma-color-bg);
+}
+
+/* Fixed-size window (code.ts showUI): the app fills it and panels scroll inside. */
+html, body, #root { height: 100%; }
+body { overflow: hidden; }
+.app { height: 100%; display: flex; flex-direction: column; }
+.panel { flex: 1; min-height: 0; overflow-y: auto; padding-top: 12px; padding-bottom: 12px; }
+
+.error { padding: 8px 16px 0; }
+
+/* Form rows */
+.field { margin-bottom: 12px; }
+.field-label { font-weight: 500; color: var(--figma-color-text); margin-bottom: 4px; }
+.field-hint { color: var(--figma-color-text-secondary); margin-bottom: 6px; }
+.toggle-row { display: flex; gap: 16px; }
+.button-stack { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+/* Write: fields scroll if needed, Note grows, Save is pinned to the bottom. */
+.write-panel { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+.write-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 0 16px; }
+.field-grow { flex: 1; min-height: 200px; display: flex; flex-direction: column; }
+.write-footer {
+  flex: none; display: flex; gap: 8px; padding: 12px 16px;
+  border-top: 1px solid var(--figma-color-border);
+}
+.write-footer > * { flex: 1; }
+
+/* Rich text Note editor (Tiptap) */
+.note-editor {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  border-radius: 5px; background: var(--figma-color-bg-secondary);
+  border: 1px solid transparent;
+}
+.note-editor:focus-within { border-color: var(--figma-color-border-selected); background: var(--figma-color-bg); }
+.note-toolbar { flex: none; display: flex; gap: 2px; padding: 4px; border-bottom: 1px solid var(--figma-color-border); }
+.note-tool {
+  width: 24px; height: 24px; padding: 0; border: 0; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--figma-color-icon); cursor: pointer;
+}
+.note-tool:hover { background: var(--figma-color-bg-hover); }
+.note-tool.is-active { background: var(--figma-color-bg-selected); color: var(--figma-color-icon-brand); }
+.note-tool:focus-visible { outline: 2px solid var(--figma-color-border-selected); outline-offset: -2px; }
+.note-link-row { flex: none; display: flex; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--figma-color-border); }
+.note-link-input { flex: 1; min-width: 0; }
+.note-body { flex: 1; min-height: 0; overflow-y: auto; position: relative; cursor: text; }
+.note-body .ProseMirror { min-height: 100%; box-sizing: border-box; padding: 8px; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; }
+.note-body[data-empty]::before {
+  content: attr(data-placeholder); position: absolute; top: 8px; left: 8px;
+  color: var(--figma-color-text-tertiary); pointer-events: none;
+}
+.note-body p, .entry-note .note-p { margin: 0 0 6px; }
+.note-body p:last-child, .entry-note > :last-child { margin-bottom: 0; }
+.note-body ul, .note-body ol { margin: 0 0 6px; padding-left: 20px; }
+.note-body li > p { margin: 0; }
+.note-body a, .entry-note a { color: var(--figma-color-text-brand); text-decoration: underline; }
+
+.setup-status { color: var(--figma-color-text-success); margin: 8px 0 4px; }
+
+/* Entries: toolbar (filter, count, export), export output, flat rows with dividers */
+/* Toolbar and export output stay put; only the list scrolls. */
+.entries-panel { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+.toolbar { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 16px 12px; }
+.toolbar-filter { flex: 1; min-width: 0; }
+.entry-count { color: var(--figma-color-text-secondary); white-space: nowrap; }
+
+.entry-list { flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid var(--figma-color-border); }
+.entry {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--figma-color-border);
+}
+.entry:last-child { border-bottom: none; }
+.entry.clickable { cursor: pointer; }
+.entry.clickable:hover { background: var(--figma-color-bg-hover); }
+.entry.clickable:focus-visible { outline: 2px solid var(--figma-color-border-selected); outline-offset: -2px; }
+.entry-meta {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--figma-color-text-secondary); margin-bottom: 4px;
+}
+.entry-heading { font-weight: 600; margin-bottom: 2px; }
+.entry-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+.entry-note .note-li { position: relative; margin-bottom: 2px; }
+.entry-note .note-marker { position: absolute; margin-left: -14px; color: var(--figma-color-text-secondary); }
+.entry-linked { color: var(--figma-color-text-secondary); margin-top: 4px; overflow-wrap: anywhere; }
+.entry-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; cursor: default; }
+
+.pill {
+  display: inline-block; padding: 0 6px; border-radius: 4px;
+  font-size: 10px; line-height: 16px; font-weight: 500;
+}
+.pill--decision { background: var(--pill-decision-bg); color: var(--pill-decision-fg); }
+.pill--assumption { background: var(--pill-assumption-bg); color: var(--pill-assumption-fg); }
+.pill--tradeoff { background: var(--pill-tradeoff-bg); color: var(--pill-tradeoff-fg); }
+.pill--feedback { background: var(--pill-feedback-bg); color: var(--pill-feedback-fg); }
+.pill--debt { background: var(--pill-debt-bg); color: var(--pill-debt-fg); }
+
+.empty-state { padding: 24px 16px; text-align: center; color: var(--figma-color-text-secondary); }
+.empty-state-title { font-weight: 600; color: var(--figma-color-text); margin-bottom: 4px; }
+
+.export { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 0 16px 12px; }
