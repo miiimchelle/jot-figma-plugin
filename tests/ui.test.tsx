@@ -97,6 +97,12 @@ describe("Write", () => {
     expect(noteMarkdown()).toBe("");
   });
 
+  it("dismisses the error banner with its close button", () => {
+    receive({ type: "ERROR", message: "Select a layer or frame first." });
+    fireEvent.click(screen.getByLabelText("Dismiss"));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("shows plugin errors and clears them on save", () => {
     receive({ type: "ERROR", message: "Write a note first." });
     expect(screen.getByRole("alert").textContent).toContain("Write a note first.");
@@ -113,6 +119,10 @@ describe("Note editor", () => {
     fireEvent.mouseDown(button);
     fireEvent.click(button);
   };
+
+  it("wraps checkbox text so it can be aligned with the box", () => {
+    expect([...document.querySelectorAll(".checkbox-label")].map((l) => l.textContent)).toEqual(["Avatar", "Name", "Timestamp"]);
+  });
 
   it("pins Save to the bottom, below the editor", () => {
     expect(document.querySelector(".write-footer")?.textContent).toBe("Save entry");

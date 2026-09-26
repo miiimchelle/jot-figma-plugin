@@ -104,8 +104,10 @@ function EntryRow({ entry: e, onGoTo, onEdit, onLink, onUnlink, onDelete, onOpen
           {e.updatedAt ? " (edited)" : ""}
         </span>
       </div>
-      {e.heading && <div class="entry-heading">{e.heading}</div>}
-      <NoteView note={e.note} onOpenLink={onOpenLink} />
+      <div class="entry-content">
+        {e.heading && <div class="entry-heading">{e.heading}</div>}
+        <NoteView note={e.note} onOpenLink={onOpenLink} />
+      </div>
       <div class="entry-linked">Linked to: {linked}</div>
       {/* Buttons must not trigger the row's jump-to-layer click. */}
       <div class="entry-actions" onClick={(ev) => ev.stopPropagation()} onKeyDown={(ev) => ev.stopPropagation()}>

@@ -26,6 +26,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Tags are optional ("No tag"), with a "No tag" filter
 - Entries: "Link to selection" for unlinked notes; "Change link" (moves the note and its sticky to the selected layer) and "Unlink" (removes the link and sticky, keeps the note) for linked ones
 - Links in notes open in the browser via the plugin (http, https and mailto only)
+- Warning messages can be dismissed with a close button
 
 ### Changed
 - Plugin UI rebuilt with Figma-native components (`@create-figma-plugin/ui`, Preact): tabs (Write, Entries, Settings), dropdowns, text fields, checkboxes, buttons, flat entry rows and a warning banner for errors. Follows Figma's light and dark theme
@@ -35,6 +36,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Pills show readable labels ("Trade-off", "Design debt"); "Entry type" is now "Tag" and "Decision note" is now "Note"
 - Manifest: `currentuser` permission, network access limited to `*.figma.com` (avatar only), UI loads from `dist/ui.html`
 - UI source lives in `ui/` and builds to `dist/ui.html`; UI tests are component tests (`@testing-library/preact`)
+- Spacing on a 4px grid. Entries rows: 16px padding, 8px between the date, content, "Linked to" line and buttons, 4px between heading and note. Write and Settings: 16px between fields, 8px from label or hint to control, 4px from label to hint
+- Checkbox labels are centred on their boxes
 
 ### Removed
 - Annotation entry kind (built, then removed before release). Entries saved with a `kind` field still load as normal notes

@@ -69,7 +69,7 @@ export function WritePanel({ form, formKey, onFormChange, display, onDisplayChan
                 value={display[key]}
                 onValueChange={(checked) => onDisplayChange({ ...display, [key]: checked })}
               >
-                {DISPLAY_LABELS[key]}
+                <span class="checkbox-label">{DISPLAY_LABELS[key]}</span>
               </Checkbox>
             ))}
           </div>

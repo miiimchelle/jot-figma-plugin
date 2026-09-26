@@ -1,4 +1,4 @@
-import { Banner, IconWarning16, Tabs } from "@create-figma-plugin/ui";
+import { Banner, IconClose16, IconWarning16, Tabs } from "@create-figma-plugin/ui";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { AuthorDisplay, DEFAULT_AUTHOR_DISPLAY, JournalEntry, extractFileKey } from "../logic";
 import { InMessage, send } from "./bridge";
@@ -188,8 +188,11 @@ export function App() {
       {error && (
         <div class="error" role="alert">
           <Banner icon={<IconWarning16 />} variant="warning">
-            {error}
+            <span class="error-text">{error}</span>
           </Banner>
+          <button type="button" class="error-dismiss" aria-label="Dismiss" title="Dismiss" onClick={() => setError("")}>
+            <IconClose16 />
+          </button>
         </div>
       )}
       {panels[tab]}
