@@ -45,7 +45,7 @@ export function EntriesPanel(props: Props) {
         </div>
         {entries.length > 0 && <div class="entry-count">{count}</div>}
         <Button secondary onClick={onExport}>
-          Export Markdown
+          Export markdown
         </Button>
       </div>
 

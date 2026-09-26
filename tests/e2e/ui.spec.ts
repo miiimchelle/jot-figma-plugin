@@ -40,7 +40,7 @@ test.describe("Jot UI e2e", () => {
     await expect(frame.locator(".entry")).toContainText("E2E journal entry");
     await expect(frame.locator(".pill")).toHaveText("Decision");
 
-    await frame.getByText("Export Markdown").click();
+    await frame.getByText("Export markdown").click();
     await expect.poll(async () => (await outbound(page)).some((m) => m.type === "EXPORT_MD")).toBe(true);
     await sendToUi(page, { type: "EXPORT_MD_RESULT", markdown: "# Jot\nTest export content" });
     await expect(frame.locator("#md")).toHaveValue("# Jot\nTest export content");
