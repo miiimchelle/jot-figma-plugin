@@ -97,6 +97,12 @@ describe("Write", () => {
     expect(noteMarkdown()).toBe("");
   });
 
+  it("dismisses the error banner with its close button", () => {
+    receive({ type: "ERROR", message: "Select a layer or frame first." });
+    fireEvent.click(screen.getByLabelText("Dismiss"));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("shows plugin errors and clears them on save", () => {
     receive({ type: "ERROR", message: "Write a note first." });
     expect(screen.getByRole("alert").textContent).toContain("Write a note first.");

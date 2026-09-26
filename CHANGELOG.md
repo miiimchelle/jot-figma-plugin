@@ -6,7 +6,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
-- —
+- Warning messages can be dismissed with a close button
 
 ### Changed
 - Write and Settings use a 4px-grid rhythm: 16px between fields, 8px from label or hint to control, 4px from label to hint. Checkbox labels are centred on their boxes
