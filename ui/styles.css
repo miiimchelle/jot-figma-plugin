@@ -37,7 +37,7 @@ body {
 .button-stack { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .setup-status { color: var(--figma-color-text-success); margin: 8px 0 4px; }
 
-/* Entries: toolbar, flat rows with dividers, footer */
+/* Entries: toolbar (filter, count, export), export output, flat rows with dividers */
 .toolbar { display: flex; align-items: center; gap: 8px; padding: 0 16px 8px; }
 .toolbar-filter { flex: 1; min-width: 0; }
 .entry-count { color: var(--figma-color-text-secondary); white-space: nowrap; }
@@ -72,8 +72,7 @@ body {
 .empty-state { padding: 24px 16px; text-align: center; color: var(--figma-color-text-secondary); }
 .empty-state-title { font-weight: 600; color: var(--figma-color-text); margin-bottom: 4px; }
 
-.footer { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 0; }
-.footer-buttons { display: flex; gap: 8px; }
+.export { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 12px; }
 
 .resize-handle {
   height: 12px; margin-top: 12px; cursor: ns-resize;

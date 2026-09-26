@@ -204,6 +204,7 @@ describe("Entries", () => {
 
   it("exports Markdown and copies it", () => {
     openEntries();
+    expect(document.querySelector(".toolbar")?.textContent).toContain("Export Markdown");
     click("Export Markdown");
     expect(last("EXPORT_MD")).toBeDefined();
     receive({ type: "EXPORT_MD_RESULT", markdown: "# Jot" });

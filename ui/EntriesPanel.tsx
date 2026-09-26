@@ -44,7 +44,19 @@ export function EntriesPanel(props: Props) {
           <Dropdown options={FILTER_OPTIONS} value={filter} onValueChange={onFilterChange} />
         </div>
         {entries.length > 0 && <div class="entry-count">{count}</div>}
+        <Button secondary onClick={onExport}>
+          Export Markdown
+        </Button>
       </div>
+
+      {markdown !== null && (
+        <div class="export">
+          <TextboxMultiline id="md" rows={6} value={markdown} aria-label="Markdown export" {...READ_ONLY} />
+          <Button secondary fullWidth onClick={onCopy}>
+            {copied ? "Copied!" : "Copy to clipboard"}
+          </Button>
+        </div>
+      )}
 
       <div class="entry-list">
         {!entries.length ? (
@@ -61,21 +73,6 @@ export function EntriesPanel(props: Props) {
         )}
       </div>
 
-      <div class="footer">
-        <div class="footer-buttons">
-          <Button secondary fullWidth onClick={onExport}>
-            Export Markdown
-          </Button>
-          {markdown !== null && (
-            <Button secondary fullWidth onClick={onCopy}>
-              {copied ? "Copied!" : "Copy to clipboard"}
-            </Button>
-          )}
-        </div>
-        {markdown !== null && (
-          <TextboxMultiline id="md" rows={6} value={markdown} aria-label="Markdown export" {...READ_ONLY} />
-        )}
-      </div>
     </div>
   );
 }
