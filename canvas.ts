@@ -1,6 +1,5 @@
 import {
   JournalEntry,
-  EntryType,
   stickyContent,
   stickyPosition,
   initials,
@@ -17,24 +16,11 @@ export const STICKY_ENTRY_KEY = "jot.entryId";
 
 const WIDTH = 300;
 const PAD = 20;
-const ICON = 20;
 
 const solid = (hex: string): SolidPaint => ({ type: "SOLID", color: hexToRgb(hex) });
 
 const FONT_FAMILY = "Roboto Mono";
 const FALLBACK_FAMILY = "Inter";
-
-// Placeholder: one pencil for every tag until tag icons are defined.
-const PENCIL_SVG =
-  '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-  '<path d="M4 20h4L18.5 9.5a2.83 2.83 0 0 0-4-4L4 16v4Z" stroke="#4A2511" stroke-width="2" stroke-linejoin="round"/>' +
-  '<path d="M13 21h7" stroke="#4A2511" stroke-width="2" stroke-linecap="round"/></svg>';
-
-const TAG_ICONS: Partial<Record<EntryType, string>> = {};
-
-function iconSvg(tag: EntryType | undefined, ink: string): string {
-  return ((tag && TAG_ICONS[tag]) || PENCIL_SVG).replace(/#4A2511/g, ink);
-}
 
 async function loadFonts(): Promise<string> {
   try {
@@ -149,18 +135,13 @@ export async function buildSticky(entry: JournalEntry): Promise<FrameNode> {
   ];
   root.setPluginData(STICKY_ENTRY_KEY, entry.id);
 
-  // Body: icon + (heading, note)
+  // Body: pill, heading, note
   const body = autoFrame("Body", "HORIZONTAL");
   body.itemSpacing = 12;
   body.paddingTop = body.paddingBottom = PAD;
   body.paddingLeft = body.paddingRight = PAD;
   root.appendChild(body);
   body.layoutSizingHorizontal = "FILL";
-
-  const icon = figma.createNodeFromSvg(iconSvg(c.tag, p.ink));
-  icon.name = "Icon";
-  icon.resize(ICON, ICON);
-  body.appendChild(icon);
 
   const column = autoFrame("Content", "VERTICAL");
   column.itemSpacing = 12;

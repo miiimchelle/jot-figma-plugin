@@ -820,11 +820,9 @@ describe("UI", () => {
       expect(items[0].querySelector(".pill")?.textContent).toBe("Design debt");
     });
 
-    it("tints tagged cards by tag and leaves untagged ones plain", () => {
+    it("does not colour code cards", () => {
       journal();
-      const items = doc.querySelectorAll(".item");
-      expect(items[0].className).toContain("item--debt");
-      expect(items[1].classList.contains("tagged")).toBe(false);
+      expect([...doc.querySelectorAll(".item")].map((i) => i.className)).toEqual(["item", "item"]);
     });
 
     it("filters by 'No tag'", () => {

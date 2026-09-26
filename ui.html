@@ -209,15 +209,6 @@
       background: var(--surface-subtle);
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
-    /* Tagged cards take their pill colour; the pill turns white to stay visible. */
-    .item--decision { --tag-bg: var(--color-pill-decision-bg); --tag-border: var(--color-pill-decision-border); }
-    .item--assumption { --tag-bg: var(--color-pill-assumption-bg); --tag-border: var(--color-pill-assumption-border); }
-    .item--tradeoff { --tag-bg: var(--color-pill-tradeoff-bg); --tag-border: var(--color-pill-tradeoff-border); }
-    .item--feedback { --tag-bg: var(--color-pill-feedback-bg); --tag-border: var(--color-pill-feedback-border); }
-    .item--debt { --tag-bg: var(--color-pill-debt-bg); --tag-border: var(--color-pill-debt-border); }
-    .item.tagged { background: var(--tag-bg); border-color: var(--tag-border); }
-    .item.tagged.clickable:hover { background: var(--tag-bg); filter: brightness(0.97); }
-    .item.tagged .pill { background-color: var(--surface-default); }
     .item.clickable:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
     }
@@ -693,7 +684,7 @@
       for (const e of filtered) {
         const item = document.createElement("div");
         const tag = TAG_LABEL[e.type] ? e.type : "";
-        item.className = "item" + (tag ? ` tagged item--${tag}` : "") + (e.nodeId ? " clickable" : "");
+        item.className = "item" + (e.nodeId ? " clickable" : "");
         if (e.nodeId) {
           item.setAttribute("tabindex", "0");
           item.onclick = () => send({ type: "GO_TO_ENTRY", id: e.id, nodeId: e.nodeId });

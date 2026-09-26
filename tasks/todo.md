@@ -23,10 +23,9 @@ Inspired by DSGN Notes. Jot entries get a **kind**: Sticky (WIP, crits) or Annot
 
 - 300px wide, auto height, 12px radius, 1px border, soft drop shadow.
 - Font: Roboto Mono. Heading Bold 16, body Regular 14, name Bold 14, date Regular 13.
-- Body: tag icon, tag pill (tagged only), heading, note indented under heading.
+- Body: tag pill (tagged only), heading, note. No icon.
 - Footer: bg `#FEFAEB`, top divider, 32px round avatar, name, date ("29 September 2025").
-- Colours per tag reuse the plugin pill colours (`TAG_PALETTES` in `logic.ts`): body = pill bg, footer = lighter tint, text/icon = pill text colour, border = pill border. Untagged: body `#FDF1C9`, footer `#FEFAEB`, text/border `#4A2511`.
-- Icon per tag (icons TBD, pencil as placeholder).
+- Colours per tag reuse the plugin pill colours (`TAG_PALETTES` in `logic.ts`): body = pill bg, footer = lighter tint, text = pill text colour, border = pill border. Untagged: body `#FDF1C9`, footer `#FEFAEB`, text/border `#4A2511`.
 - Heading empty: heading row hidden. All footer toggles off: footer hidden.
 
 ### Author options (Sticky and Annotation)
